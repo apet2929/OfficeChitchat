@@ -15,7 +15,7 @@ public class Floor extends Group {
         for(int i = 0; i < width; i++){
             for(int j = 0; j < height; j++){
                 props[i][j] = Prop.getEmptyProp(i,j);
-                getChildren().add(props[i][j]);
+
             }
         }
     }
@@ -23,6 +23,9 @@ public class Floor extends Group {
     public void addProp(Prop prop){
         System.out.println(prop);
         props[prop.getPosX()][prop.getPosY()] = prop;
+        if(prop.getSprite() != null) {
+            getChildren().add(prop.getSprite());
+        }
     }
 
     public int getWidth() {

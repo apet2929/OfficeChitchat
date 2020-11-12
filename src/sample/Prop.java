@@ -1,26 +1,29 @@
 package sample;
 
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
-public class Prop extends ImageView {
+public class Prop {
     //This class is a basic class that other classes like walls and chairs and shit will extend from
     private int x, y;
     private ID id;
     private boolean passable;
-    private Sprite sprite;
-
-    public Prop(ID id, boolean passable, Sprite sprite, int x, int y, int width, int height){
+//    private Image sprite;
+    private ImageView sprite;
+    public Prop(ID id, boolean passable, ImageView sprite, int x, int y, int width, int height){
         this.id = id;
         this.passable = passable;
         this.sprite = sprite;
         this.x = x;
         this.y = y;
-        this.setLayoutX(x*50);
-        this.setLayoutY(y*50);
-        setFitWidth(width);
-        setFitHeight(height);
+        if(sprite != null) {
+            this.sprite.setLayoutX(x * 50);
+            this.sprite.setLayoutY(y * 50);
+            this.sprite.setFitWidth(width);
+            this.sprite.setFitHeight(height);
+        }
     }
-    public Prop(ID id, boolean passable, Sprite sprite){
+    public Prop(ID id, boolean passable, ImageView sprite){
         this.id = id;
         this.passable = passable;
         this.sprite = sprite;
@@ -32,12 +35,12 @@ public class Prop extends ImageView {
         this.id = id;
     }
 
-    public Sprite getSprite() {
+    public ImageView getSprite() {
         return sprite;
     }
 
-    public void setSprite(Sprite sprite) {
-        this.sprite = sprite;
+    public void setSprite(Image sprite) {
+        this.sprite.setImage(sprite);
     }
 
     public boolean isPassable() {

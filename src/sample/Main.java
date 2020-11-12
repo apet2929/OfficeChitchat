@@ -1,10 +1,7 @@
 package sample;
 
 import javafx.application.Application;
-import javafx.fxml.FXMLLoader;
 import javafx.scene.Group;
-import javafx.scene.ImageCursor;
-import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -28,6 +25,7 @@ public class Main extends Application {
     private Floor floor = new Floor();
     public static final int scale = 50;
     private Player player;
+    private ImageManager imageManager;
     @Override
     public void start(Stage primaryStage) throws Exception{
         Group root = new Group();
@@ -45,23 +43,17 @@ public class Main extends Application {
         }
         floor.getChildren().addAll(lineList);
 
-
-        player = new Player(null, 0, 0, this.floor);
+        imageManager = new ImageManager();
+        player = new Player(new ImageView(new Image(imageManager.playerUp)), 0, 0, this.floor);
         floor.addProp(player);
-        rect = new Rectangle(0,0,scale,scale);
-        floor.getChildren().add(rect);
+//        rect = new Rectangle(0,0,scale,scale);
+//        floor.getChildren().add(rect);
 
-        Wall wall = new Wall(null, 5,5);
-        Rectangle rectangle = new Rectangle(wall.getLayoutX(), wall.getLayoutY(), 50, 50);
-        rectangle.setFill(Color.RED);
-        floor.getChildren().add(rectangle);
+        Wall wall = new Wall(new ImageView(new Image(genImages(Wall.IMAGE))), 5,5);
         floor.addProp(wall);
-//        floor.props[5][5] = wall;
 
         game.setOnKeyPressed(this::handleInput);
 
-//        ImageView imageView = new ImageView(new Image(genImages()));
-//        floor.getChildren().add(imageView);
 
         primaryStage.show();
     }
@@ -71,20 +63,20 @@ public class Main extends Application {
         switch (e.getCode()) {
             case W -> {
                 player.moveUp();
-                rect.setLayoutY(player.getPosY()*scale);
+//                rect.setLayoutY(player.getPosY()*scale);
             }
             case A -> {
                 player.moveLeft();
-                rect.setLayoutX(player.getPosX()*scale);
+//                rect.setLayoutX(player.getPosX()*scale);
             }
             case S -> {
                 player.moveDown();
-                rect.setLayoutY(player.getPosY()*scale);
+//                rect.setLayoutY(player.getPosY()*scale);
 
             }
             case D -> {
                 player.moveRight();
-                rect.setLayoutX(player.getPosX()*scale);
+//                rect.setLayoutX(player.getPosX()*scale);
             }
             case SPACE -> {
                 for(int i = 0; i < floor.props[0].length; i++){
@@ -94,17 +86,20 @@ public class Main extends Application {
             default -> System.out.println("default");
         }
     }
-
-    private FileInputStream genImages(){
-        {
-            try {
-                return new FileInputStream("F:\\Documents\\Code\\OfficeChitchat\\src\\sample\\test.png");
-                }
-            catch (FileNotFoundException e) {
-                e.printStackTrace();
-            }
+    public static FileInputStream genImages(String id) { //wtf this works?
+        try {
+            return switch (id) {
+                case "player_up" -> new FileInputStream("F:\\Documents\\Code\\OfficeChitchat\\src\\sample\\assets\\player_up.png");
+                case "player_down" -> new FileInputStream("F:\\Documents\\Code\\OfficeChitchat\\src\\sample\\assets\\player_down.png");
+                case "player_left" -> new FileInputStream("F:\\Documents\\Code\\OfficeChitchat\\src\\sample\\assets\\player_left.png");
+                case "player_right" -> new FileInputStream("F:\\Documents\\Code\\OfficeChitchat\\src\\sample\\assets\\player_right.png");
+                case "wall" -> new FileInputStream("F:\\Documents\\Code\\OfficeChitchat\\src\\sample\\assets\\wall.png");
+                default -> throw new IllegalStateException("Unexpected value: " + id);
+            };
+        } catch (FileNotFoundException var2) {
+            var2.printStackTrace();
+            return null;
         }
-        return null;
     }
     public static void main(String[] args) {
         launch(args);

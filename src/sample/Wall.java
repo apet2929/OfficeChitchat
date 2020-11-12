@@ -1,10 +1,13 @@
 package sample;
 
-public class Wall extends Prop{
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 
-    public Wall(Sprite sprite, int x, int y) {
+public class Wall extends Prop{
+    public static final String IMAGE = "wall";
+    public Wall(ImageView sprite, int x, int y) {
         super(ID.Wall, false, sprite, x, y,50,50);
-        setLayoutX(x*Main.scale);
-        setLayoutY(y*Main.scale);
+        this.getSprite().setLayoutX(x*Main.scale);
+        this.getSprite().setLayoutY(y*Main.scale);
     }
 }
