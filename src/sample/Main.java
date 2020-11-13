@@ -1,16 +1,20 @@
 package sample;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.TextArea;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
 import java.io.FileInputStream;
@@ -27,25 +31,40 @@ public class Main extends Application {
     private Floor floor = new Floor();
     public static final int scale = 50;
     private Player player;
-
+    private GameStateManager gameStateManager;
     private Scene game;
+    private Scene menu;
     //Sidebar
     private static TextArea output = new TextArea();
     @Override
     public void start(Stage primaryStage) throws Exception{
-        Group root = new Group();
-        game = new Scene(root, WIDTH + 300, HEIGHT);
-        primaryStage.setScene(game);
-        root.getChildren().add(floor);
-        root.getChildren().add(output);
+        Group gameRoot = new Group();
+        Group menuRoot = new Group();
+        game = new Scene(gameRoot, WIDTH + 300, HEIGHT);
+        menu = new Scene(menuRoot, WIDTH + 300, HEIGHT);
+        gameStateManager = new GameStateManager(primaryStage, game,menu);
+        gameStateManager.setCurGameState(GameStateManager.GameState.MAINMENU);
+        generateMainMenu(menuRoot);
+        primaryStage.setScene(menu);
 
-        generateGame();
-        generateSidebar();
+        gameRoot.getChildren().add(floor);
+        gameRoot.getChildren().add(output);
+
+        menu.setOnKeyPressed(this::handleInput);
+        menu.setOnMouseClicked(this::handleInput);
+        game.setOnKeyPressed(this::handleInput);
+        game.setOnMouseClicked(this::handleInput);
+
+//        if(gameStateManager.getCurGameState() == GameStateManager.GameState.GAME) {
+//            generateGame();
+//            generateSidebar();
+//        }
+
 
         primaryStage.show();
     }
 
-    public void generateGame() throws FileNotFoundException {
+    public void generateGame() {
         List<Line> lineList = new ArrayList<>();
         for(int i = 0; i < WIDTH/scale; i++){
             lineList.add(new Line(i*scale, 0, i*scale, HEIGHT));
@@ -55,7 +74,6 @@ public class Main extends Application {
         }
         floor.getChildren().addAll(lineList);
 
-
         player = new Player(new ImageView(new Image(genImages(Player.UP_IMAGE))), 1, 1, this.floor, Player.Status.Default);
         floor.addProp(player);
 
@@ -63,7 +81,39 @@ public class Main extends Application {
         Wall wall = new Wall(new ImageView(new Image(genImages(Wall.IMAGE))), 5,5);
         floor.addProp(wall);
 
-        game.setOnKeyPressed(this::handleInput);
+
+    }
+
+    public Scene getGame() {
+        return game;
+    }
+
+    public Scene getMenu() {
+        return menu;
+    }
+
+    private void handleInput(MouseEvent e){
+        System.out.println("yes");
+        switch(gameStateManager.getCurGameState()){
+            case MAINMENU -> handleMenu(e);
+        }
+    }
+    private void handleInput(KeyEvent e) {
+        switch(gameStateManager.getCurGameState()){
+            case GAME -> handleMovement(e);
+            case MAINMENU -> handleMenu(e);
+        }
+
+
+    }
+
+    private void handleMenu(MouseEvent e) {
+        if(e.getButton() == MouseButton.PRIMARY) {
+            generateGame();
+            generateSidebar();
+            gameStateManager.setCurGameState(GameStateManager.GameState.GAME);
+
+        }
     }
 
     public void generateSidebar(){
@@ -81,42 +131,60 @@ public class Main extends Application {
 
     }
 
-    private void handleInput(KeyEvent e) {
+    public void generateMainMenu(Group menuRoot){
+        Text mainMenuText = new Text(WIDTH/2, HEIGHT/2, "MAIN MENU");
+        menuRoot.getChildren().add(mainMenuText);
 
+    }
+
+
+
+    private void handleMenu(KeyEvent e) {
+        switch (e.getCode()){
+            case ENTER -> {
+                gameStateManager.setCurGameState(GameStateManager.GameState.GAME);
+            }
+            case ESCAPE -> {
+                Platform.exit();
+            }
+        }
+    }
+
+    private void handleMovement(KeyEvent e) {
         switch (e.getCode()) {
             case W -> {
-                if(player.getStatus() == Player.Status.Default) player.moveUp();
-                else if(player.getStatus() == Player.Status.Looking){
-                    print(floor.props[player.getPosX()][player.getPosY()-1].getDescription());
-                    System.out.println(floor.props[player.getPosX()][player.getPosY()-1]);
+                if (player.getStatus() == Player.Status.Default) player.moveUp();
+                else if (player.getStatus() == Player.Status.Looking) {
+                    print(floor.props[player.getPosX()][player.getPosY() - 1].getDescription());
+                    System.out.println(floor.props[player.getPosX()][player.getPosY() - 1]);
                     player.setStatus(Player.Status.Default);
                 }
 //                rect.setLayoutY(player.getPosY()*scale);
             }
             case A -> {
-                if(player.getStatus() == Player.Status.Default) player.moveLeft();
-                else if(player.getStatus() == Player.Status.Looking) {
-                    print(floor.props[player.getPosX()-1][player.getPosY()].getDescription());
-                    System.out.println(floor.props[player.getPosX()-1][player.getPosY()]);
+                if (player.getStatus() == Player.Status.Default) player.moveLeft();
+                else if (player.getStatus() == Player.Status.Looking) {
+                    print(floor.props[player.getPosX() - 1][player.getPosY()].getDescription());
+                    System.out.println(floor.props[player.getPosX() - 1][player.getPosY()]);
                     player.setStatus(Player.Status.Default);
                 }
 //                rect.setLayoutX(player.getPosX()*scale);
             }
             case S -> {
-                if(player.getStatus() == Player.Status.Default) player.moveDown();
-                else if(player.getStatus() == Player.Status.Looking) {
-                    print(floor.props[player.getPosX()][player.getPosY()+1].getDescription());
-                    System.out.println(floor.props[player.getPosX()][player.getPosY()+1]);
+                if (player.getStatus() == Player.Status.Default) player.moveDown();
+                else if (player.getStatus() == Player.Status.Looking) {
+                    print(floor.props[player.getPosX()][player.getPosY() + 1].getDescription());
+                    System.out.println(floor.props[player.getPosX()][player.getPosY() + 1]);
                     player.setStatus(Player.Status.Default);
                 }
 //                rect.setLayoutY(player.getPosY()*scale);
 
             }
             case D -> {
-                if(player.getStatus() == Player.Status.Default) player.moveRight();
-                else if(player.getStatus() == Player.Status.Looking) {
-                    print(floor.props[player.getPosX()+1][player.getPosY()].getDescription());
-                    System.out.println(floor.props[player.getPosX()+1][player.getPosY()]);
+                if (player.getStatus() == Player.Status.Default) player.moveRight();
+                else if (player.getStatus() == Player.Status.Looking) {
+                    print(floor.props[player.getPosX() + 1][player.getPosY()].getDescription());
+                    System.out.println(floor.props[player.getPosX() + 1][player.getPosY()]);
                     player.setStatus(Player.Status.Default);
                 }
 //                rect.setLayoutX(player.getPosX()*scale);
@@ -130,13 +198,14 @@ public class Main extends Application {
 
             }
             case E -> {
-                for(int i = 0; i < floor.props[0].length; i++){
+                for (int i = 0; i < floor.props[0].length; i++) {
                     System.out.println(Arrays.toString(floor.props[i]));
                 }
             }
             default -> System.out.println("default");
         }
     }
+
     public static FileInputStream genImages(String id) { //wtf this works?
         try {
             return new FileInputStream("F:\\Documents\\Code\\OfficeChitchat\\src\\sample\\assets\\"+id+".png");
@@ -155,9 +224,11 @@ public class Main extends Application {
             return null;
         }
     }
+
     public static void print(String text){
         output.appendText("\n" + text);
     }
+
     public static void main(String[] args) {
         launch(args);
     }

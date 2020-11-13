@@ -45,7 +45,7 @@ public class Player extends Prop{
                     floor.switchPlaces(this.getPosX(), this.getPosY(), this.getPosX(), this.getPosY() + 1);
                 }
             } else {
-                System.out.println("You bumped into a " + floor.props[this.getPosX()][this.getPosY() + 1].getID());
+                Main.print("You bumped into a " + floor.props[this.getPosX()][this.getPosY() + 1].getID());
             }
         }
         updateSprite();
