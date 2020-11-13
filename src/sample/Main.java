@@ -3,12 +3,14 @@ package sample;
 import javafx.application.Application;
 import javafx.scene.Group;
 import javafx.scene.Scene;
+import javafx.scene.control.TextArea;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Font;
 import javafx.stage.Stage;
 
 import java.io.FileInputStream;
@@ -26,14 +28,24 @@ public class Main extends Application {
     public static final int scale = 50;
     private Player player;
     private ImageManager imageManager;
+    private Scene game;
+    //Sidebar
+    private static TextArea output = new TextArea();
     @Override
     public void start(Stage primaryStage) throws Exception{
         Group root = new Group();
-        Scene game = new Scene(root, WIDTH, HEIGHT);
+        game = new Scene(root, WIDTH + 300, HEIGHT);
         primaryStage.setScene(game);
         root.getChildren().add(floor);
+        root.getChildren().add(output);
 
+        generateGame();
+        generateSidebar();
 
+        primaryStage.show();
+    }
+
+    public void generateGame() throws FileNotFoundException {
         List<Line> lineList = new ArrayList<>();
         for(int i = 0; i < WIDTH/scale; i++){
             lineList.add(new Line(i*scale, 0, i*scale, HEIGHT));
@@ -44,44 +56,70 @@ public class Main extends Application {
         floor.getChildren().addAll(lineList);
 
         imageManager = new ImageManager();
-        player = new Player(new ImageView(new Image(imageManager.playerUp)), 0, 0, this.floor);
+        player = new Player(new ImageView(new Image(imageManager.playerUp)), 0, 0, this.floor, Player.Status.Default);
         floor.addProp(player);
-//        rect = new Rectangle(0,0,scale,scale);
-//        floor.getChildren().add(rect);
 
         Wall wall = new Wall(new ImageView(new Image(genImages(Wall.IMAGE))), 5,5);
         floor.addProp(wall);
 
         game.setOnKeyPressed(this::handleInput);
+    }
 
+    public void generateSidebar(){
+        output.setPrefHeight(1000-80);
+        output.setFont(Font.font(24));
+        output.setEditable(false);
+        output.setFocusTraversable(false);
+        output.setLayoutX(1000);
+        output.setLayoutY(0);
+        output.appendText("Output area");
+        output.appendText("\n");
 
-        primaryStage.show();
     }
 
     private void handleInput(KeyEvent e) {
 
         switch (e.getCode()) {
             case W -> {
-                player.moveUp();
+                if(player.getStatus() == Player.Status.Default) player.moveUp();
+                else if(player.getStatus() == Player.Status.Looking){
+                    print(floor.props[player.getPosX()][player.getPosY()-1].getDescription());
+                    player.setStatus(Player.Status.Default);
+                }
 //                rect.setLayoutY(player.getPosY()*scale);
             }
             case A -> {
-                player.moveLeft();
+                if(player.getStatus() == Player.Status.Default) player.moveLeft();
+                else if(player.getStatus() == Player.Status.Looking) {
+                    print(floor.props[player.getPosX()-1][player.getPosY()].getDescription());
+                    player.setStatus(Player.Status.Default);
+                }
 //                rect.setLayoutX(player.getPosX()*scale);
             }
             case S -> {
-                player.moveDown();
+                if(player.getStatus() == Player.Status.Default) player.moveDown();
+                else if(player.getStatus() == Player.Status.Looking) {
+                    print(floor.props[player.getPosX()][player.getPosY()+1].getDescription());
+                    player.setStatus(Player.Status.Default);
+                }
 //                rect.setLayoutY(player.getPosY()*scale);
 
             }
             case D -> {
-                player.moveRight();
+                if(player.getStatus() == Player.Status.Default) player.moveRight();
+                else if(player.getStatus() == Player.Status.Looking) {
+                    print(floor.props[player.getPosX()+1][player.getPosY()].getDescription());
+                    player.setStatus(Player.Status.Default);
+                }
 //                rect.setLayoutX(player.getPosX()*scale);
             }
             case SPACE -> {
-                for(int i = 0; i < floor.props[0].length; i++){
-                    System.out.println(Arrays.toString(floor.props[i]));
-                }
+//                for(int i = 0; i < floor.props[0].length; i++){
+//                    System.out.println(Arrays.toString(floor.props[i]));
+//                }
+                print("Select a direction");
+                player.setStatus(Player.Status.Looking);
+
             }
             default -> System.out.println("default");
         }
@@ -100,6 +138,9 @@ public class Main extends Application {
             var2.printStackTrace();
             return null;
         }
+    }
+    public static void print(String text){
+        output.appendText("\n" + text);
     }
     public static void main(String[] args) {
         launch(args);

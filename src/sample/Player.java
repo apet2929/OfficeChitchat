@@ -3,15 +3,32 @@ package sample;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
+
 public class Player extends Prop{
+    public enum Status {
+        Default,
+        Looking
+    };
     private Floor floor;
     public static final String UP_IMAGE = "player_up";
     public static final String DOWN_IMAGE = "player_down";
     public static final String LEFT_IMAGE = "player_left";
     public static final String RIGHT_IMAGE = "player_right";
-    public Player(ImageView sprite, int x, int y, Floor floor) {
-        super(ID.Player, true, sprite,x,y, 50, 50);
+
+    private Status status;
+
+    public Status getStatus() {
+        return status;
+    }
+
+    public void setStatus(Status status) {
+        this.status = status;
+    }
+
+    public Player(ImageView sprite, int x, int y, Floor floor, Status status) {
+        super(ID.Player, true, sprite,x,y, 50, 50, "It's you");
         this.floor = floor;
+        this.status = status;
     }
 
     public void moveDown(){
