@@ -37,9 +37,13 @@ public class Player extends Prop{
             System.out.println("You are at the edge of the room x: " + getPosX() + " y: " + getPosY());
         } else {
             if (floor.props[this.getPosX()][this.getPosY() + 1].isPassable()) {
-                floor.props[this.getPosX()][this.getPosY()] = floor.props[this.getPosX()][this.getPosY()+1];
-                floor.props[this.getPosX()][this.getPosY()+1] = this;
-                setPosY(getPosY() + 1);
+                if(floor.props[this.getPosX()][this.getPosY() + 1].getID() == ID.Empty){
+                    this.floor.props[this.getPosX()][this.getPosY()] = this.floor.props[this.getPosX()][this.getPosY() + 1];
+                    this.floor.props[this.getPosX()][this.getPosY() + 1] = this;
+                    this.setPosY(this.getPosY() + 1);
+                } else {
+                    floor.switchPlaces(this.getPosX(), this.getPosY(), this.getPosX(), this.getPosY() + 1);
+                }
             } else {
                 System.out.println("You bumped into a " + floor.props[this.getPosX()][this.getPosY() + 1].getID());
             }
@@ -47,6 +51,7 @@ public class Player extends Prop{
         updateSprite();
 
     }
+
     public void moveUp(){
         this.setSprite(new Image(Main.genImages(UP_IMAGE)));
         if(getPosY() <= 0) {
@@ -54,9 +59,13 @@ public class Player extends Prop{
         } else{
             Prop moveTo = floor.props[this.getPosX()][this.getPosY()-1];
             if (moveTo.isPassable()) {
-                floor.props[this.getPosX()][this.getPosY()] = floor.props[this.getPosX()][this.getPosY()-1];
-                floor.props[this.getPosX()][this.getPosY()-1] = this;
-                setPosY(getPosY() - 1);
+                if(floor.props[this.getPosX()][this.getPosY() - 1].getID() == ID.Empty){
+                    this.floor.props[this.getPosX()][this.getPosY()] = this.floor.props[this.getPosX()][this.getPosY() - 1];
+                    this.floor.props[this.getPosX()][this.getPosY() - 1] = this;
+                    this.setPosY(this.getPosY() - 1);
+                } else {
+                    floor.switchPlaces(this.getPosX(), this.getPosY(), this.getPosX(), this.getPosY() - 1);
+                }
             } else {
                 System.out.println("You bumped into a " + floor.props[this.getPosX()][this.getPosY() - 1].getID());
             }
@@ -70,10 +79,13 @@ public class Player extends Prop{
             System.out.println(floor.getWidth() + " " + floor.getHeight());
         } else{
             if (floor.props[this.getPosX() - 1][this.getPosY()].isPassable()) {
-                floor.props[this.getPosX()][this.getPosY()] = floor.props[this.getPosX() - 1][this.getPosY()];
-                floor.props[this.getPosX()-1][this.getPosY()] = this;
-                setPosX(getPosX() - 1);
-
+                if(floor.props[this.getPosX()-1][this.getPosY()].getID() == ID.Empty){
+                    this.floor.props[this.getPosX()][this.getPosY()] = this.floor.props[this.getPosX()-1][this.getPosY()];
+                    this.floor.props[this.getPosX()-1][this.getPosY()] = this;
+                    this.setPosX(this.getPosX() - 1);
+                }  else {
+                    floor.switchPlaces(this.getPosX(), this.getPosY(), this.getPosX() - 1, this.getPosY());
+                }
             } else {
                 System.out.println("You bumped into a " + floor.props[this.getPosX() - 1][this.getPosY()].getID());
             }
@@ -87,19 +99,19 @@ public class Player extends Prop{
             System.out.println(floor.getWidth() + " " + floor.getHeight());
         } else{
             if (floor.props[this.getPosX() + 1][this.getPosY()].isPassable()) {
-                floor.props[this.getPosX()][this.getPosY()] = floor.props[this.getPosX() + 1][this.getPosY()]; //The thing to the right is moved to the player's position
-                floor.props[this.getPosX()+1][this.getPosY()] = this; //The player is moved to the right
-                setPosX(getPosX() + 1);
-
+                if(floor.props[this.getPosX()+1][this.getPosY()].getID() == ID.Empty){
+                    this.floor.props[this.getPosX()][this.getPosY()] = this.floor.props[this.getPosX()+1][this.getPosY()];
+                    this.floor.props[this.getPosX()+1][this.getPosY()] = this;
+                    this.setPosX(this.getPosX() + 1);
+                } else {
+                    floor.switchPlaces(this.getPosX(), this.getPosY(), this.getPosX() + 1, this.getPosY());
+                }
             } else {
                 System.out.println("You bumped into a " + floor.props[this.getPosX() + 1][this.getPosY()].getID());
             }
         }
         updateSprite();
     }
-    private void updateSprite(){
-        this.getSprite().setLayoutX(this.getPosX()*Main.scale);
-        this.getSprite().setLayoutY(this.getPosY()*Main.scale);
-    }
+
 
 }

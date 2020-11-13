@@ -3,6 +3,8 @@ package sample;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
+import java.util.Objects;
+
 public class Prop {
     //This class is a basic class that other classes like walls and chairs and shit will extend from
     private int x, y;
@@ -84,7 +86,7 @@ public class Prop {
     }
 
     public static Prop getEmptyProp(int x, int y){
-        return new Prop(ID.Empty, true, null, x,y, 50, 50, "There's nothing there.");
+        return new Prop(ID.Empty, true, new ImageView(new Image(Objects.requireNonNull(Main.genImages("floor")))), x,y, 50, 50, "There's nothing there.");
     }
 
     @Override
@@ -95,5 +97,9 @@ public class Prop {
                 ", id=" + id +
                 ", passable=" + passable +
                 '}';
+    }
+    public void updateSprite(){
+        this.getSprite().setLayoutX(this.getPosX()*Main.scale);
+        this.getSprite().setLayoutY(this.getPosY()*Main.scale);
     }
 }

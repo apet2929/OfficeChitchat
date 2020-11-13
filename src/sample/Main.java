@@ -27,7 +27,7 @@ public class Main extends Application {
     private Floor floor = new Floor();
     public static final int scale = 50;
     private Player player;
-    private ImageManager imageManager;
+
     private Scene game;
     //Sidebar
     private static TextArea output = new TextArea();
@@ -55,10 +55,11 @@ public class Main extends Application {
         }
         floor.getChildren().addAll(lineList);
 
-        imageManager = new ImageManager();
-        player = new Player(new ImageView(new Image(imageManager.playerUp)), 0, 0, this.floor, Player.Status.Default);
+
+        player = new Player(new ImageView(new Image(genImages(Player.UP_IMAGE))), 1, 1, this.floor, Player.Status.Default);
         floor.addProp(player);
 
+        floor.addProp(new BasicPerson(new ImageView(new Image(genImages("player_up"))), 10,10,50,50));
         Wall wall = new Wall(new ImageView(new Image(genImages(Wall.IMAGE))), 5,5);
         floor.addProp(wall);
 
@@ -66,11 +67,14 @@ public class Main extends Application {
     }
 
     public void generateSidebar(){
+        //When you click on the sidebar, the game softlocks
         output.setPrefHeight(1000-80);
+        output.setPrefWidth(290);
+        output.setWrapText(true);
         output.setFont(Font.font(24));
         output.setEditable(false);
         output.setFocusTraversable(false);
-        output.setLayoutX(1000);
+        output.setLayoutX(1010);
         output.setLayoutY(0);
         output.appendText("Output area");
         output.appendText("\n");
@@ -84,6 +88,7 @@ public class Main extends Application {
                 if(player.getStatus() == Player.Status.Default) player.moveUp();
                 else if(player.getStatus() == Player.Status.Looking){
                     print(floor.props[player.getPosX()][player.getPosY()-1].getDescription());
+                    System.out.println(floor.props[player.getPosX()][player.getPosY()-1]);
                     player.setStatus(Player.Status.Default);
                 }
 //                rect.setLayoutY(player.getPosY()*scale);
@@ -92,6 +97,7 @@ public class Main extends Application {
                 if(player.getStatus() == Player.Status.Default) player.moveLeft();
                 else if(player.getStatus() == Player.Status.Looking) {
                     print(floor.props[player.getPosX()-1][player.getPosY()].getDescription());
+                    System.out.println(floor.props[player.getPosX()-1][player.getPosY()]);
                     player.setStatus(Player.Status.Default);
                 }
 //                rect.setLayoutX(player.getPosX()*scale);
@@ -100,6 +106,7 @@ public class Main extends Application {
                 if(player.getStatus() == Player.Status.Default) player.moveDown();
                 else if(player.getStatus() == Player.Status.Looking) {
                     print(floor.props[player.getPosX()][player.getPosY()+1].getDescription());
+                    System.out.println(floor.props[player.getPosX()][player.getPosY()+1]);
                     player.setStatus(Player.Status.Default);
                 }
 //                rect.setLayoutY(player.getPosY()*scale);
@@ -109,6 +116,7 @@ public class Main extends Application {
                 if(player.getStatus() == Player.Status.Default) player.moveRight();
                 else if(player.getStatus() == Player.Status.Looking) {
                     print(floor.props[player.getPosX()+1][player.getPosY()].getDescription());
+                    System.out.println(floor.props[player.getPosX()+1][player.getPosY()]);
                     player.setStatus(Player.Status.Default);
                 }
 //                rect.setLayoutX(player.getPosX()*scale);
@@ -121,19 +129,27 @@ public class Main extends Application {
                 player.setStatus(Player.Status.Looking);
 
             }
+            case E -> {
+                for(int i = 0; i < floor.props[0].length; i++){
+                    System.out.println(Arrays.toString(floor.props[i]));
+                }
+            }
             default -> System.out.println("default");
         }
     }
     public static FileInputStream genImages(String id) { //wtf this works?
         try {
-            return switch (id) {
-                case "player_up" -> new FileInputStream("F:\\Documents\\Code\\OfficeChitchat\\src\\sample\\assets\\player_up.png");
-                case "player_down" -> new FileInputStream("F:\\Documents\\Code\\OfficeChitchat\\src\\sample\\assets\\player_down.png");
-                case "player_left" -> new FileInputStream("F:\\Documents\\Code\\OfficeChitchat\\src\\sample\\assets\\player_left.png");
-                case "player_right" -> new FileInputStream("F:\\Documents\\Code\\OfficeChitchat\\src\\sample\\assets\\player_right.png");
-                case "wall" -> new FileInputStream("F:\\Documents\\Code\\OfficeChitchat\\src\\sample\\assets\\wall.png");
-                default -> throw new IllegalStateException("Unexpected value: " + id);
-            };
+            return new FileInputStream("F:\\Documents\\Code\\OfficeChitchat\\src\\sample\\assets\\"+id+".png");
+//            return switch (id) {
+//                case "player_up" -> new FileInputStream("F:\\Documents\\Code\\OfficeChitchat\\src\\sample\\assets\\player_up.png");
+//                case "player_down" -> new FileInputStream("F:\\Documents\\Code\\OfficeChitchat\\src\\sample\\assets\\player_down.png");
+//                case "player_left" -> new FileInputStream("F:\\Documents\\Code\\OfficeChitchat\\src\\sample\\assets\\player_left.png");
+//                case "player_right" -> new FileInputStream("F:\\Documents\\Code\\OfficeChitchat\\src\\sample\\assets\\player_right.png");
+//                case "wall" -> new FileInputStream("F:\\Documents\\Code\\OfficeChitchat\\src\\sample\\assets\\wall.png");
+//                case "wall_corner" -> new FileInputStream("F:\\Documents\\Code\\OfficeChitchat\\src\\sample\\assets\\wall_corner.png");
+//                case
+//                default -> throw new IllegalStateException("Unexpected value: " + id);
+//            };
         } catch (FileNotFoundException var2) {
             var2.printStackTrace();
             return null;
