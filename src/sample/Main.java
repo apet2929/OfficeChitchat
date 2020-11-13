@@ -2,9 +2,12 @@ package sample;
 
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.TextArea;
+import javafx.scene.effect.DropShadow;
+import javafx.scene.effect.Effect;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyEvent;
@@ -84,20 +87,14 @@ public class Main extends Application {
 
     }
 
-    public Scene getGame() {
-        return game;
-    }
-
-    public Scene getMenu() {
-        return menu;
-    }
 
     private void handleInput(MouseEvent e){
         System.out.println("yes");
         switch(gameStateManager.getCurGameState()){
             case MAINMENU -> handleMenu(e);
         }
-    }
+    } //Mouse Input
+
     private void handleInput(KeyEvent e) {
         switch(gameStateManager.getCurGameState()){
             case GAME -> handleMovement(e);
@@ -105,16 +102,7 @@ public class Main extends Application {
         }
 
 
-    }
-
-    private void handleMenu(MouseEvent e) {
-        if(e.getButton() == MouseButton.PRIMARY) {
-            generateGame();
-            generateSidebar();
-            gameStateManager.setCurGameState(GameStateManager.GameState.GAME);
-
-        }
-    }
+    } //Keyboard Input
 
     public void generateSidebar(){
         //When you click on the sidebar, the game softlocks
@@ -132,14 +120,33 @@ public class Main extends Application {
     }
 
     public void generateMainMenu(Group menuRoot){
-        Text mainMenuText = new Text(WIDTH/2, HEIGHT/2, "MAIN MENU");
-        menuRoot.getChildren().add(mainMenuText);
+        Font buttonFont = Font.font(24);
+        Text mainMenuText = new Text(WIDTH/2, 50, "MAIN MENU");
+        mainMenuText.setFont(Font.font(50));
 
+        Text playText = new Text(110,130,"PLAY");
+
+        playText.setFont(buttonFont);
+        Rectangle playButton = new Rectangle(100,100,100,50);
+        playButton.setFill(null);
+        playButton.setStroke(Color.BLACK);
+        playButton.setOnMouseClicked(this::handleMenu);
+
+        Text exitText = new Text(110,270, "EXIT");
+        exitText.setFont(buttonFont);
+        Rectangle exitButton = new Rectangle(100,250,100,50);
+        exitButton.setFill(null);
+        exitButton.setStroke(Color.BLACK);
+        exitButton.setOnMouseClicked(e -> Platform.exit());
+
+
+        menuRoot.getChildren().addAll(mainMenuText, playButton, playText, exitButton, exitText);
     }
 
 
 
     private void handleMenu(KeyEvent e) {
+
         switch (e.getCode()){
             case ENTER -> {
                 gameStateManager.setCurGameState(GameStateManager.GameState.GAME);
@@ -150,6 +157,14 @@ public class Main extends Application {
         }
     }
 
+    private void handleMenu(MouseEvent e) {
+        if(e.getButton() == MouseButton.PRIMARY) {
+            generateGame();
+            generateSidebar();
+            gameStateManager.setCurGameState(GameStateManager.GameState.GAME);
+
+        }
+    }
     private void handleMovement(KeyEvent e) {
         switch (e.getCode()) {
             case W -> {
@@ -223,6 +238,14 @@ public class Main extends Application {
             var2.printStackTrace();
             return null;
         }
+    }
+
+    public Scene getGame() {
+        return game;
+    }
+
+    public Scene getMenu() {
+        return menu;
     }
 
     public static void print(String text){
