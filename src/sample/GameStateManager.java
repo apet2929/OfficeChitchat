@@ -13,6 +13,7 @@ public class GameStateManager {
         GAME,
         EDITOR,
         CREDITS,
+        CUTSCENE,
         BATTLE
     }
     public GameStateManager(Stage primaryStage, Scene game, Scene menu){

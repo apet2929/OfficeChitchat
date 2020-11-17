@@ -13,9 +13,10 @@ import static sample.Main.genImages;
 
 public class Floor extends Group {
 //    List<Prop> props = new ArrayList<>();
-    public Prop[][] props = new Prop[(Main.WIDTH/Main.scale)][(Main.HEIGHT/Main.scale)];
-    private final int width = Main.WIDTH/Main.scale;
+    private final int width = (Main.WIDTH-300)/Main.scale;
     private final int height = Main.HEIGHT/Main.scale;
+    public Prop[][] props = new Prop[width][height];
+
 
     public Floor(){
         System.out.println(props.length);

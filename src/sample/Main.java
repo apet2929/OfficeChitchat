@@ -28,7 +28,7 @@ import java.util.List;
 
 
 public class Main extends Application {
-    public static final int WIDTH = 1000;
+    public static final int WIDTH = 1300;
     public static final int HEIGHT = 1000;
     private Rectangle rect;
     private Floor floor = new Floor();
@@ -37,17 +37,30 @@ public class Main extends Application {
     private GameStateManager gameStateManager;
     private Scene game;
     private Scene menu;
+    private Scene cutscene;
     //Sidebar
     private static TextArea output = new TextArea();
+
+    //Cutscenes
+    private static final int NUMCUTSCENES = 1;
+    private CutsceneManager cutsceneManager;
+    private Cutscene testCutscene;
+    private Text cutsceneText;
+    private ImageView cutSceneImage;
+
     @Override
     public void start(Stage primaryStage) throws Exception{
         Group gameRoot = new Group();
         Group menuRoot = new Group();
-        game = new Scene(gameRoot, WIDTH + 300, HEIGHT);
-        menu = new Scene(menuRoot, WIDTH + 300, HEIGHT);
+        Group cutsceneRoot = new Group();
+        game = new Scene(gameRoot, WIDTH, HEIGHT);
+        menu = new Scene(menuRoot, WIDTH, HEIGHT);
+        cutscene = new Scene(cutsceneRoot, WIDTH, HEIGHT);
         gameStateManager = new GameStateManager(primaryStage, game,menu);
         gameStateManager.setCurGameState(GameStateManager.GameState.MAINMENU);
+
         generateMainMenu(menuRoot);
+
         primaryStage.setScene(menu);
 
         gameRoot.getChildren().add(floor);
@@ -58,25 +71,20 @@ public class Main extends Application {
         game.setOnKeyPressed(this::handleInput);
         game.setOnMouseClicked(this::handleInput);
 
-//        if(gameStateManager.getCurGameState() == GameStateManager.GameState.GAME) {
-//            generateGame();
-//            generateSidebar();
-//        }
-
+        //Cutscene testing
+        String[] texts = {"This is test #1","This is test #2","This is test #3","This is test #4"};
+        int[] flags = {2,4};
+        Image[] images = {new Image(genImages("wall")), new Image(genImages("player_up"))};
+        testCutscene = new Cutscene(images, texts, flags);
+        cutsceneManager = new CutsceneManager(testCutscene);
+        generateCutsceneLayout(cutsceneRoot);
+//        primaryStage.setScene(cutscene);
+        cutscene.setOnMouseClicked(e -> handleInput(e));
 
         primaryStage.show();
     }
 
     public void generateGame() {
-        List<Line> lineList = new ArrayList<>();
-        for(int i = 0; i < WIDTH/scale; i++){
-            lineList.add(new Line(i*scale, 0, i*scale, HEIGHT));
-        }
-        for(int j = 0; j < HEIGHT / scale; j++){
-            lineList.add(new Line(0, j*scale, WIDTH, j*scale));
-        }
-        floor.getChildren().addAll(lineList);
-
         player = new Player(new ImageView(new Image(genImages(Player.UP_IMAGE))), 1, 1, this.floor, Player.Status.Default);
         floor.addProp(player);
 
@@ -84,16 +92,29 @@ public class Main extends Application {
         Wall wall = new Wall(new ImageView(new Image(genImages(Wall.IMAGE))), 5,5);
         floor.addProp(wall);
 
-
     }
 
-
     private void handleInput(MouseEvent e){
-        System.out.println("yes");
+//        System.out.println("yes");
         switch(gameStateManager.getCurGameState()){
-            case MAINMENU -> handleMenu(e);
+            case MAINMENU -> {
+                handleMenu(e);
+            }
+            case CUTSCENE -> {
+                handleCutscene(e);
+            }
+
         }
     } //Mouse Input
+
+    private void handleCutscene(MouseEvent e) {
+        if(e.getButton() == MouseButton.PRIMARY){
+            cutsceneManager.update(1);
+            cutsceneText.setText(cutsceneManager.getCurText());
+            cutSceneImage.setImage(cutsceneManager.getCurImage());
+            if(cutsceneManager.finished) gameStateManager.setCurGameState(GameStateManager.GameState.GAME);
+        }
+    }
 
     private void handleInput(KeyEvent e) {
         switch(gameStateManager.getCurGameState()){
@@ -106,13 +127,13 @@ public class Main extends Application {
 
     public void generateSidebar(){
         //When you click on the sidebar, the game softlocks
-        output.setPrefHeight(1000-80);
+        output.setPrefHeight(HEIGHT-80);
         output.setPrefWidth(290);
         output.setWrapText(true);
         output.setFont(Font.font(24));
         output.setEditable(false);
         output.setFocusTraversable(false);
-        output.setLayoutX(1010);
+        output.setLayoutX(WIDTH-290);
         output.setLayoutY(0);
         output.appendText("Output area");
         output.appendText("\n");
@@ -121,7 +142,7 @@ public class Main extends Application {
 
     public void generateMainMenu(Group menuRoot){
         Font buttonFont = Font.font(24);
-        Text mainMenuText = new Text(WIDTH/2, 50, "MAIN MENU");
+        Text mainMenuText = new Text((WIDTH-300)/2, 50, "MAIN MENU");
         mainMenuText.setFont(Font.font(50));
 
         Text playText = new Text(110,130,"PLAY");
@@ -143,12 +164,26 @@ public class Main extends Application {
         menuRoot.getChildren().addAll(mainMenuText, playButton, playText, exitButton, exitText);
     }
 
+    private void generateCutsceneLayout(Group cutsceneRoot){
+        Rectangle textBox = new Rectangle(0, HEIGHT-250, WIDTH, HEIGHT);
+        textBox.setFill(new Color(0,0,0,0.5));
+        cutsceneText = new Text(cutsceneManager.getCurText());
+        cutsceneText.setLayoutX(20);
+        cutsceneText.setLayoutY(HEIGHT-200);
+        cutsceneText.setFont(Font.font(40));
+        cutSceneImage = new ImageView(cutsceneManager.getCurImage());
+        cutSceneImage.setFitHeight(HEIGHT);
+        cutSceneImage.setFitWidth(WIDTH);
+        cutsceneRoot.getChildren().addAll(cutSceneImage, textBox, cutsceneText);
+    }
+    private void updateCutscene(int updateBy){ //Number of text
 
+    }
 
     private void handleMenu(KeyEvent e) {
 
         switch (e.getCode()){
-            case ENTER -> {
+            case BACK_SPACE -> {
                 gameStateManager.setCurGameState(GameStateManager.GameState.GAME);
             }
             case ESCAPE -> {
@@ -165,6 +200,20 @@ public class Main extends Application {
 
         }
     }
+
+
+//    public static Cutscene getCutscene(int curCutscene) {
+//        if(curCutscene <= NUMCUTSCENES) {
+//            switch (curCutscene) {
+//                case 0: return new Cutscene(null,null,null);
+//            }
+//        } else{
+//            System.out.println("Cutscene number " + curCutscene + " is out of bounds of range " + NUMCUTSCENES);
+//            return null;
+//        }
+//        return null;
+//    }
+
     private void handleMovement(KeyEvent e) {
         switch (e.getCode()) {
             case W -> {
