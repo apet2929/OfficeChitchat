@@ -5,33 +5,44 @@ import javafx.scene.image.ImageView;
 
 import java.util.Objects;
 
+import static sample.Main.genImages;
+
 public class Prop {
     //This class is a basic class that other classes like walls and chairs and shit will extend from
     private int x, y;
     private ID id;
     private boolean passable;
     private String description;
-//    private Image sprite;
-    private ImageView sprite;
-    public Prop(ID id, boolean passable, ImageView sprite, int x, int y, int width, int height, String description){
+    public static Prop FLOOR = new Prop(ID.Empty, true, 0, 0, 50, 50, "There's nothing there.");
+    public static Prop PERSON = new BasicPerson( 0,0,50,50, Main.PLAYER_SRC, null);
+    public static Prop WALL = new Wall( 0,0);
+    //    private Image sprite;
+
+    public int width, height;
+    public Prop(ID id, boolean passable, int x, int y, int width, int height, String description){
         this.id = id;
         this.passable = passable;
-        this.sprite = sprite;
         this.x = x;
         this.y = y;
         this.description = description;
-        if(sprite != null) {
-            this.sprite.setLayoutX(x * 50);
-            this.sprite.setLayoutY(y * 50);
-            this.sprite.setFitWidth(width);
-            this.sprite.setFitHeight(height);
-        }
+        this.width = width;
+        this.height = height;
     }
     public Prop(ID id, boolean passable, ImageView sprite){
         this.id = id;
         this.passable = passable;
-        this.sprite = sprite;
+
     }
+
+    public static Prop getEmptyProp() {
+        return new Prop(ID.Empty, true, 0, 0, 50, 50, "There's nothing there.");
+
+    }
+
+    public static Prop clone(Prop prop) {
+        return new Prop(prop.getID(), prop.passable,  prop.x, prop.y, prop.width, prop.height, prop.getDescription());
+    }
+
     public ID getID() {
         return id;
     }
@@ -39,13 +50,6 @@ public class Prop {
         this.id = id;
     }
 
-    public ImageView getSprite() {
-        return sprite;
-    }
-
-    public void setSprite(Image sprite) {
-        this.sprite.setImage(sprite);
-    }
 
     public boolean isPassable() {
         return passable;
@@ -86,8 +90,9 @@ public class Prop {
     }
 
     public static Prop getEmptyProp(int x, int y){
-        return new Prop(ID.Empty, true, new ImageView(new Image(Objects.requireNonNull(Main.genImages("floor")))), x,y, 50, 50, "There's nothing there.");
+        return new Prop(ID.Empty, true, x,y, 50, 50, "There's nothing there.");
     }
+
 
     @Override
     public String toString() {
@@ -97,9 +102,5 @@ public class Prop {
                 ", id=" + id +
                 ", passable=" + passable +
                 '}';
-    }
-    public void updateSprite(){
-        this.getSprite().setLayoutX(this.getPosX()*Main.scale);
-        this.getSprite().setLayoutY(this.getPosY()*Main.scale);
     }
 }

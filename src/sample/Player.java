@@ -4,12 +4,12 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
 
-public class Player extends Prop{
+public class Player extends BasicPerson{
     public enum Status {
         Default,
         Looking
     };
-    private Floor floor;
+
     public static final String UP_IMAGE = "player_up";
     public static final String DOWN_IMAGE = "player_down";
     public static final String LEFT_IMAGE = "player_left";
@@ -24,15 +24,15 @@ public class Player extends Prop{
     public void setStatus(Status status) {
         this.status = status;
     }
-
-    public Player(ImageView sprite, int x, int y, Floor floor, Status status) {
-        super(ID.Player, true, sprite,x,y, 50, 50, "It's you");
-        this.floor = floor;
+    public Player( int x, int y, Floor floor, Status status) {
+        super(x,y, 50, 50, Main.PLAYER_SRC, floor);
+        this.setID(ID.Player);
+        this.setDescription( "It's you");
         this.status = status;
+
     }
 
     public void moveDown(){
-        this.setSprite(new Image(Main.genImages(DOWN_IMAGE)));
         if(getPosY() >= floor.getHeight()) {
             System.out.println("You are at the edge of the room x: " + getPosX() + " y: " + getPosY());
         } else {
@@ -48,12 +48,12 @@ public class Player extends Prop{
                 Main.print("You bumped into a " + floor.props[this.getPosX()][this.getPosY() + 1].getID());
             }
         }
-        updateSprite();
+        this.setSprite(new Image(Main.genImages(DOWN_IMAGE)));
 
     }
 
     public void moveUp(){
-        this.setSprite(new Image(Main.genImages(UP_IMAGE)));
+
         if(getPosY() <= 0) {
             System.out.println("You are at the edge of the room x: " + getPosX() + " y: " + getPosY());
         } else{
@@ -70,10 +70,10 @@ public class Player extends Prop{
                 System.out.println("You bumped into a " + floor.props[this.getPosX()][this.getPosY() - 1].getID());
             }
         }
-        updateSprite();
+        this.setSprite(new Image(Main.genImages(UP_IMAGE)));
     }
     public void moveLeft(){
-        this.setSprite(new Image(Main.genImages(LEFT_IMAGE)));
+
         if(getPosX() <= 0) {
             System.out.println("You are at the edge of the room x: " + getPosX() + " y: " + getPosY());
             System.out.println(floor.getWidth() + " " + floor.getHeight());
@@ -90,10 +90,9 @@ public class Player extends Prop{
                 System.out.println("You bumped into a " + floor.props[this.getPosX() - 1][this.getPosY()].getID());
             }
         }
-        updateSprite();
+        this.setSprite(new Image(Main.genImages(LEFT_IMAGE)));
     }
     public void moveRight() {
-        this.setSprite(new Image(Main.genImages(RIGHT_IMAGE)));
         if (getPosX() >= floor.getWidth()) {
             System.out.println("You are at the edge of the room x: " + getPosX() + " y: " + getPosY());
             System.out.println(floor.getWidth() + " " + floor.getHeight());
@@ -110,8 +109,16 @@ public class Player extends Prop{
                 System.out.println("You bumped into a " + floor.props[this.getPosX() + 1][this.getPosY()].getID());
             }
         }
-        updateSprite();
+        this.setSprite(new Image(Main.genImages(RIGHT_IMAGE)));
+    }
+    public void setSprite(Image image){
+        imageView.setImage(image);
+        updatePosition();
+        this.floor.update();
     }
 
 
+    public void setFloor(Floor floor) {
+        this.floor = floor;
+    }
 }

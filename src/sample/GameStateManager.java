@@ -31,6 +31,7 @@ public class GameStateManager {
         switch (curGameState){
             case MAINMENU: primaryStage.setScene(menu);
             case GAME: primaryStage.setScene(game);
+            case EDITOR: primaryStage.setScene(game);
         }
     }
 }

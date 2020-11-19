@@ -10,6 +10,7 @@ import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.Effect;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
@@ -48,6 +49,14 @@ public class Main extends Application {
     private Text cutsceneText;
     private ImageView cutSceneImage;
 
+    //Editor
+    private Prop selectedProp;
+
+    //Sprite sources
+    public static final Image PLAYER_SRC = new Image(genImages("player_up"));
+    public static final Image WALL_SRC = new Image(genImages("wall"));
+    public static final Image FLOOR_SRC = new Image(genImages("floor"));
+
     @Override
     public void start(Stage primaryStage) throws Exception{
         Group gameRoot = new Group();
@@ -71,25 +80,27 @@ public class Main extends Application {
         game.setOnKeyPressed(this::handleInput);
         game.setOnMouseClicked(this::handleInput);
 
+
         //Cutscene testing
-        String[] texts = {"This is test #1","This is test #2","This is test #3","This is test #4"};
-        int[] flags = {2,4};
-        Image[] images = {new Image(genImages("wall")), new Image(genImages("player_up"))};
-        testCutscene = new Cutscene(images, texts, flags);
-        cutsceneManager = new CutsceneManager(testCutscene);
-        generateCutsceneLayout(cutsceneRoot);
+//        String[] texts = {"This is test #1","This is test #2","This is test #3","This is test #4"};
+//        int[] flags = {2,4};
+//        Image[] images = {new Image(genImages("wall")), new Image(genImages("player_up"))};
+//        testCutscene = new Cutscene(images, texts, flags);
+//        cutsceneManager = new CutsceneManager(testCutscene);
+//        generateCutsceneLayout(cutsceneRoot);
+//        cutscene.setOnMouseClicked(e -> handleInput(e));
 //        primaryStage.setScene(cutscene);
-        cutscene.setOnMouseClicked(e -> handleInput(e));
+
+
 
         primaryStage.show();
     }
 
     public void generateGame() {
-        player = new Player(new ImageView(new Image(genImages(Player.UP_IMAGE))), 1, 1, this.floor, Player.Status.Default);
+        player = new Player(1, 1, this.floor, Player.Status.Default);
         floor.addProp(player);
-
-        floor.addProp(new BasicPerson(new ImageView(new Image(genImages("player_up"))), 10,10,50,50));
-        Wall wall = new Wall(new ImageView(new Image(genImages(Wall.IMAGE))), 5,5);
+        floor.addProp(new BasicPerson( 10,10,50,50, PLAYER_SRC, floor));
+        Wall wall = new Wall( 5,5);
         floor.addProp(wall);
 
     }
@@ -103,9 +114,58 @@ public class Main extends Application {
             case CUTSCENE -> {
                 handleCutscene(e);
             }
+            case EDITOR -> {
+                handleEditor(e);
+            }
 
         }
     } //Mouse Input
+    private void handleInput(KeyEvent e) {
+        switch(gameStateManager.getCurGameState()){
+            case GAME -> handleMovement(e);
+            case MAINMENU -> handleMenu(e);
+            case EDITOR -> handleEditor(e);
+        }
+        if(e.getCode() == KeyCode.R) floor.update();
+
+
+    } //Keyboard Input
+
+    private void handleEditor(MouseEvent e) {
+        int x = (int) ((e.getX()/(WIDTH-300))*floor.getWidth());
+        int y = (int) ((e.getY()/HEIGHT)*floor.getHeight());
+        System.out.println("X :" + x + " Y: " + y);
+        if(selectedProp != null){
+            floor.addProp(selectedProp);
+            floor.setPropXY(0,0,x,y);
+        } else {
+            System.out.println("Please select a prop using the controls");
+        }
+    }
+
+    private void handleEditor(KeyEvent e){
+        switch (e.getCode()){
+            case A -> {
+                selectedProp = Prop.clone(Prop.getEmptyProp());
+            }
+            case B -> {
+                selectedProp = Prop.clone(Prop.WALL);
+            }
+            case C -> {
+                selectedProp = Prop.clone(Prop.PERSON);
+            }
+            case D -> {
+                if(player != null){
+                    selectedProp = player; //Make sure player is initialized before you do this.
+                    System.out.println("Make sure you only put one player down, or else the program will break");
+                } else System.out.println("Make sure you initialize Player before you select him in the editor");
+
+            }
+        }
+        if(selectedProp != null){
+            System.out.println("You have selected a " + selectedProp.getID());
+        }
+    }
 
     private void handleCutscene(MouseEvent e) {
         if(e.getButton() == MouseButton.PRIMARY){
@@ -116,14 +176,7 @@ public class Main extends Application {
         }
     }
 
-    private void handleInput(KeyEvent e) {
-        switch(gameStateManager.getCurGameState()){
-            case GAME -> handleMovement(e);
-            case MAINMENU -> handleMenu(e);
-        }
 
-
-    } //Keyboard Input
 
     public void generateSidebar(){
         //When you click on the sidebar, the game softlocks
@@ -175,9 +228,6 @@ public class Main extends Application {
         cutSceneImage.setFitHeight(HEIGHT);
         cutSceneImage.setFitWidth(WIDTH);
         cutsceneRoot.getChildren().addAll(cutSceneImage, textBox, cutsceneText);
-    }
-    private void updateCutscene(int updateBy){ //Number of text
-
     }
 
     private void handleMenu(KeyEvent e) {
@@ -265,6 +315,10 @@ public class Main extends Application {
                 for (int i = 0; i < floor.props[0].length; i++) {
                     System.out.println(Arrays.toString(floor.props[i]));
                 }
+            }
+            case SHIFT -> {
+                gameStateManager.setCurGameState(GameStateManager.GameState.EDITOR);
+                System.out.println("You are now in the editor. Please refer to the editor guide for how to make a new floor.");
             }
             default -> System.out.println("default");
         }
