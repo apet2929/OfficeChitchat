@@ -2,12 +2,9 @@ package sample;
 
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.beans.binding.Bindings;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.TextArea;
-import javafx.scene.effect.DropShadow;
-import javafx.scene.effect.Effect;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
@@ -15,7 +12,6 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
@@ -23,15 +19,14 @@ import javafx.stage.Stage;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
+import java.util.Scanner;
 
 
 public class Main extends Application {
     public static final int WIDTH = 1300;
     public static final int HEIGHT = 1000;
-    private Rectangle rect;
+//    private Rectangle rect;
     private Floor floor = new Floor();
     public static final int scale = 50;
     private Player player;
@@ -57,6 +52,8 @@ public class Main extends Application {
     public static final Image WALL_SRC = new Image(genImages("wall"));
     public static final Image FLOOR_SRC = new Image(genImages("floor"));
 
+    //Loading level
+    private LevelBuilder levelBuilder;
     @Override
     public void start(Stage primaryStage) throws Exception{
         Group gameRoot = new Group();
@@ -92,16 +89,32 @@ public class Main extends Application {
 //        primaryStage.setScene(cutscene);
 
 
-
         primaryStage.show();
     }
 
-    public void generateGame() {
-        player = new Player(1, 1, this.floor, Player.Status.Default);
-        floor.addProp(player);
-        floor.addProp(new BasicPerson( 10,10,50,50, PLAYER_SRC, floor));
-        Wall wall = new Wall( 5,5);
-        floor.addProp(wall);
+    public void generateGame(){
+                try{
+            levelBuilder = (LevelBuilder) SaveManager.load("test2.fun");
+            int[] walls = levelBuilder.objects.get("Walls");
+            int[] people = levelBuilder.objects.get("People");
+            int[] player = levelBuilder.objects.get("Player");
+            if(walls != null) {
+                for (int i = 0; i < walls.length - 1; i += 2) floor.addProp(new Wall(walls[i], walls[i + 1]));
+            } else System.out.println("Walls is null");
+            for(int i = 0; i < people.length-1; i+=2)floor.addProp(generateProp(ID.Person, people[i], people[i+1]));
+            this.player = new Player(player[0], player[1], floor, Player.Status.Default);
+            floor.addProp(this.player);
+            }
+        catch (Exception e){
+            System.out.println("Couldn't load: " + e.getMessage());
+
+            e.printStackTrace();
+//            player = new Player(1, 1, this.floor, Player.Status.Default);
+//            floor.addProp(player);
+//            floor.addProp(new BasicPerson( 10,10,50,50, PLAYER_SRC, floor));
+//            Wall wall = new Wall( 5,5);
+//            floor.addProp(wall);
+        }
 
     }
 
@@ -136,8 +149,10 @@ public class Main extends Application {
         int y = (int) ((e.getY()/HEIGHT)*floor.getHeight());
         System.out.println("X :" + x + " Y: " + y);
         if(selectedProp != null){
+            selectedProp = generateProp(selectedProp.getID(), x, y);
+            assert selectedProp != null;
             floor.addProp(selectedProp);
-            floor.setPropXY(0,0,x,y);
+            System.out.println(selectedProp);
         } else {
             System.out.println("Please select a prop using the controls");
         }
@@ -161,10 +176,34 @@ public class Main extends Application {
                 } else System.out.println("Make sure you initialize Player before you select him in the editor");
 
             }
+            case ENTER -> {
+                System.out.println("Name your level: ");
+                Scanner input = new Scanner(System.in);
+                String name = input.next();
+                Main.saveLevel(name, floor);
+                if(name != null){
+                    Platform.exit();
+                }
+            }
         }
-        if(selectedProp != null){
+        if(selectedProp != null && e.getCode() != KeyCode.ENTER){
             System.out.println("You have selected a " + selectedProp.getID());
         }
+    }
+
+    private Prop generateProp(ID id, int x, int y){
+        if(x >= 0 && x < floor.getWidth() && y >= 0 && y < floor.getHeight()) {
+            switch (id) {
+                case Empty:
+                    return Prop.clone(Prop.getEmptyProp(x, y));
+                case Wall:
+                    return new Wall(x, y);
+                case Person:
+                    return new BasicPerson(x, y, 50, 50, PLAYER_SRC, floor);
+            }
+        } else System.out.println("The X value of " + x + " or the Y value of " + y + " may be out of bounds");
+        System.out.println("The ID you have selected is not a valid ID");
+        return null;
     }
 
     private void handleCutscene(MouseEvent e) {
@@ -179,7 +218,7 @@ public class Main extends Application {
 
 
     public void generateSidebar(){
-        //When you click on the sidebar, the game softlocks
+        //When you click on the sidebar, the game soft locks
         output.setPrefHeight(HEIGHT-80);
         output.setPrefWidth(290);
         output.setWrapText(true);
@@ -292,7 +331,6 @@ public class Main extends Application {
                     player.setStatus(Player.Status.Default);
                 }
 //                rect.setLayoutY(player.getPosY()*scale);
-
             }
             case D -> {
                 if (player.getStatus() == Player.Status.Default) player.moveRight();
@@ -340,6 +378,38 @@ public class Main extends Application {
         } catch (FileNotFoundException var2) {
             var2.printStackTrace();
             return null;
+        }
+    }
+
+    public static void saveLevel(String name, Floor floor){
+        int[] walls = new int[floor.wallCnt * 2];
+        int b = 0;
+        int[] people = new int[floor.personCnt * 2];
+        int en = 0;
+        for(Prop[] propRay: floor.props) {
+            for (Prop prop : propRay) {
+                if (prop.getID() == ID.Wall) {
+                    walls[b] = prop.getPosX();
+                    walls[b + 1] = prop.getPosY();
+                    b += 2;
+                } else if (prop.getID() == ID.Person) {
+                    people[en] = prop.getPosX();
+                    people[en + 1] = prop.getPosY();
+                    en += 2;
+                }
+            }
+        }
+        LevelBuilder lvl = new LevelBuilder(
+                name + ".fun", walls, people,
+                //player spawn
+                new int[]{1, 1}
+        );
+
+        try{
+            SaveManager.save(lvl, lvl.name);
+        }
+        catch (Exception e){
+            System.out.println("Couldn't save: "+ e.getMessage());
         }
     }
 

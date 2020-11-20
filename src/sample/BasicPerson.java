@@ -13,8 +13,8 @@ public class BasicPerson extends Prop{
         if(floor != null){
             this.floor = floor;
             this.floor.getChildren().add(imageView);
+            System.out.println("ImageView added");
         }
-
     }
     public void updatePosition() {
         imageView.setLayoutX(getPosX()*Main.scale);

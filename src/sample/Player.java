@@ -42,7 +42,7 @@ public class Player extends BasicPerson{
                     this.floor.props[this.getPosX()][this.getPosY() + 1] = this;
                     this.setPosY(this.getPosY() + 1);
                 } else {
-                    floor.switchPlaces(this.getPosX(), this.getPosY(), this.getPosX(), this.getPosY() + 1);
+                    floor.switchPlaces(this, this.floor.props[this.getPosX()][this.getPosY() +1]);
                 }
             } else {
                 Main.print("You bumped into a " + floor.props[this.getPosX()][this.getPosY() + 1].getID());
@@ -64,7 +64,7 @@ public class Player extends BasicPerson{
                     this.floor.props[this.getPosX()][this.getPosY() - 1] = this;
                     this.setPosY(this.getPosY() - 1);
                 } else {
-                    floor.switchPlaces(this.getPosX(), this.getPosY(), this.getPosX(), this.getPosY() - 1);
+                    floor.switchPlaces(this, this.floor.props[this.getPosX()][this.getPosY() - 1]);
                 }
             } else {
                 System.out.println("You bumped into a " + floor.props[this.getPosX()][this.getPosY() - 1].getID());
@@ -84,7 +84,7 @@ public class Player extends BasicPerson{
                     this.floor.props[this.getPosX()-1][this.getPosY()] = this;
                     this.setPosX(this.getPosX() - 1);
                 }  else {
-                    floor.switchPlaces(this.getPosX(), this.getPosY(), this.getPosX() - 1, this.getPosY());
+                    floor.switchPlaces(this, this.floor.props[this.getPosX()-1][this.getPosY()]);
                 }
             } else {
                 System.out.println("You bumped into a " + floor.props[this.getPosX() - 1][this.getPosY()].getID());
@@ -103,7 +103,7 @@ public class Player extends BasicPerson{
                     this.floor.props[this.getPosX()+1][this.getPosY()] = this;
                     this.setPosX(this.getPosX() + 1);
                 } else {
-                    floor.switchPlaces(this.getPosX(), this.getPosY(), this.getPosX() + 1, this.getPosY());
+                    floor.switchPlaces(this, this.floor.props[this.getPosX()+1][this.getPosY()]);
                 }
             } else {
                 System.out.println("You bumped into a " + floor.props[this.getPosX() + 1][this.getPosY()].getID());

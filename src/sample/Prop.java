@@ -15,7 +15,7 @@ public class Prop {
     private String description;
     public static Prop FLOOR = new Prop(ID.Empty, true, 0, 0, 50, 50, "There's nothing there.");
     public static Prop PERSON = new BasicPerson( 0,0,50,50, Main.PLAYER_SRC, null);
-    public static Prop WALL = new Wall( 0,0);
+    public static Prop WALL = new Wall(0,0);
     //    private Image sprite;
 
     public int width, height;
