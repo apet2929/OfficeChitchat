@@ -3,20 +3,23 @@ package sample;
 import javafx.scene.Group;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+
+import java.io.Serializable;
 import java.util.Arrays;
+import java.util.Objects;
+
+import static sample.Main.*;
 
 
-import static sample.Main.FLOOR_SRC;
-
-
-public class Floor extends Group {
+public class Floor extends Group implements Serializable {
 
     private final int width = (Main.WIDTH-300)/Main.scale;
     private final int height = Main.HEIGHT/Main.scale;
     public Prop[][] props = new Prop[width][height];
-    ImageView[][] imageViews = new ImageView[width][height];
-    private boolean debug = false;
-    public Image fillTile;
+    private final ImageView[][] floor = new ImageView[width][height];
+    public ImageView[][] propImageViews = new ImageView[width][height];
+    private final boolean debug = false;
+    public int fillTile;
     public int wallCnt = 0;
     public int personCnt = 0;
     public Floor(){
@@ -24,33 +27,25 @@ public class Floor extends Group {
         fillTile = FLOOR_SRC;
         for(int i = 0; i < width; i++){
             for(int j = 0; j < height; j++){
-                imageViews[i][j] = new ImageView();
-                imageViews[i][j].setLayoutX(i*Main.scale);
-                imageViews[i][j].setLayoutY(j*Main.scale);
-            }
-            getChildren().addAll(imageViews[i]);
-        }
-        fillEmptyTile();
-    }
+                floor[i][j] = new ImageView(new Image(Main.genImages(fillTile)));
+                floor[i][j].setLayoutX(i*Main.scale);
+                floor[i][j].setLayoutY(j*Main.scale);
 
-    public void fillEmptyTile(){
-        for(int i = 0; i < width; i++){
-            for(int j = 0; j < height; j++){
-//                if(i == 0 || j == 0 || i == width-1 || j == height-1) addProp(new Wall(i, j));
-//                else {
-//
-//                }
-                Prop floor = Prop.clone(Prop.FLOOR);
-                setPropXYNoSwitch(floor,i,j);
-                addProp(floor);
-                tileFloor();
+                propImageViews[i][j] = new ImageView(new Image(Main.genImages(WALL_CORNER_SRC)));
+                propImageViews[i][j].setLayoutX(i*Main.scale);
+                propImageViews[i][j].setLayoutY(j*Main.scale);
+                propImageViews[i][j].setTranslateZ(2);
+
             }
+            getChildren().addAll(floor[i]);
+            getChildren().addAll(propImageViews[i]);
         }
     }
 
     public void setPropXYSwitch(int x1, int y1, int x2, int y2){
         props[x1][y1].setXY(x2,y2);
         props[x2][y2] = props[x1][y1];
+        props[x2][y2].setXY(x1,y1);
         update();
     }
     public void setPropXYNoSwitch(Prop prop, int x2, int y2){
@@ -62,7 +57,7 @@ public class Floor extends Group {
     public void tileFloor(){
         for(int i = 0; i < width; i++){
             for(int j = 0; j < height; j++){
-                imageViews[i][j].setImage(fillTile);
+                floor[i][j].setImage(new Image(genImages(fillTile)));
             }
         }
     }
@@ -74,7 +69,9 @@ public class Floor extends Group {
         else if(prop.getID().equals(ID.Person)) personCnt++;
         update();
     }
-
+    public void setImage(int x, int y, int imageID){
+        propImageViews[x][y].setImage(new Image(Main.genImages(imageID)));
+    }
 //    public void switchPlaces(int x1, int y1, int x2, int y2){
 //
 //        Prop temp = props[x1][y1];
@@ -109,14 +106,7 @@ public class Floor extends Group {
             for (int j = 0; j < height; j++) {
                 Prop prop = props[i][j];
                 if (prop != null) {
-                    if(prop.getID().equals(ID.Wall)){
-                        imageViews[i][j].setImage(Main.WALL_SRC);
-//                        System.out.println(prop);
-                    }
-                    if(prop.getID().equals(ID.Empty)){
-                        imageViews[i][j].setImage(FLOOR_SRC);
-//                        System.out.println(prop);
-                    }
+                    propImageViews[i][j].setImage(new Image(Objects.requireNonNull(genImages(prop.getImageID()))));
 //                    else{
 //                        imageViews[i][j].setImage(Main.FLOOR_SRC);
 //                    }
@@ -135,6 +125,8 @@ public class Floor extends Group {
 //                        }
 //                    }
                     if(debug) System.out.print(prop);
+                } else {
+                    propImageViews[i][j].setImage(null);
                 }
             }
             if(debug) System.out.println();
