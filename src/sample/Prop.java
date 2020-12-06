@@ -105,6 +105,10 @@ public class Prop implements Serializable {
                 ", y=" + y +
                 ", id=" + id +
                 ", passable=" + passable +
-                '}';
+                ", description='" + description + '\'' +
+                ", imageID=" + imageID +
+                ", width=" + width +
+                ", height=" + height +
+                '}' + '\n';
     }
 }

@@ -173,7 +173,7 @@ public class Main extends Application {
                 selectedProp = Prop.clone(Prop.PERSON);
                 BasicPerson test = (BasicPerson) selectedProp;
                 test.floor = floor;
-
+                test.updatePosition();
             }
             case D -> {
                 if(player != null){

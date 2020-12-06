@@ -5,6 +5,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
 import java.io.Serializable;
+import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -18,7 +19,7 @@ public class Floor extends Group implements Serializable {
     public Prop[][] props = new Prop[width][height];
     private final ImageView[][] floor = new ImageView[width][height];
     public ImageView[][] propImageViews = new ImageView[width][height];
-    private final boolean debug = false;
+    private final boolean debug = true;
     public int fillTile;
     public int wallCnt = 0;
     public int personCnt = 0;
@@ -42,10 +43,23 @@ public class Floor extends Group implements Serializable {
         }
     }
 
-    public void setPropXYSwitch(int x1, int y1, int x2, int y2){
-        props[x1][y1].setXY(x2,y2);
-        props[x2][y2] = props[x1][y1];
-        props[x2][y2].setXY(x1,y1);
+//    public void setPropXYSwitch(int x1, int y1, int x2, int y2){
+//        props[x1][y1].setXY(x2,y2); //player.setXY(x2,y2)
+//        props[x2][y2] = props[x1][y1]; //player is put into
+//        props[x2][y2].setXY(x1,y1);
+//        update();
+//    }
+
+    public void setPropSwitch(Prop prop1, Prop prop2){
+        System.out.println("Switching " + prop1 + " and " + prop2);
+        int prop1X = prop1.getPosX();
+        int prop1Y = prop1.getPosY();
+        int prop2X = prop2.getPosX();
+        int prop2Y = prop2.getPosY();
+        prop1.setXY(prop2X, prop2Y);
+        prop2.setXY(prop1X, prop1Y);
+        props[prop2X][prop2Y] = prop1;
+        props[prop1X][prop1Y] = prop2;
         update();
     }
     public void setPropXYNoSwitch(Prop prop, int x2, int y2){
@@ -106,6 +120,7 @@ public class Floor extends Group implements Serializable {
             for (int j = 0; j < height; j++) {
                 Prop prop = props[i][j];
                 if (prop != null) {
+//                    System.out.println(prop.getID() + " " + prop.getImageID());
                     propImageViews[i][j].setImage(new Image(Objects.requireNonNull(genImages(prop.getImageID()))));
 //                    else{
 //                        imageViews[i][j].setImage(Main.FLOOR_SRC);
@@ -129,7 +144,6 @@ public class Floor extends Group implements Serializable {
                     propImageViews[i][j].setImage(null);
                 }
             }
-            if(debug) System.out.println();
         }
         System.out.println("Updating");
     }

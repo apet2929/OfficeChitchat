@@ -9,9 +9,8 @@ public class BasicPerson extends Prop{
         super(ID.Person, true, x, y, width, height, "Your coworker and co-sufferer", Main.PLAYER_UP_SRC);
         if(floor != null){
             this.floor = floor;
-            floor.propImageViews[x][y] = new ImageView(new Image(Main.genImages(Main.PLAYER_UP_SRC)));
-            System.out.println("ImageView added");
         }
+        this.setImageID(Main.PLAYER_UP_SRC);
         updatePosition();
     }
 

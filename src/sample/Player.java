@@ -45,7 +45,7 @@ public class Player extends BasicPerson {
             } else { //If the space im moving to has a prop in it
                 Prop moveTo = floor.props[getPosX()][getPosY()+1];
                 if(moveTo.isPassable()){ //If it is passable
-                    floor.setPropXYSwitch(getPosX(),getPosY(),getPosX(),getPosY()+1);
+                    floor.setPropSwitch(this, moveTo);
                 } else { //If it is not passable
                     Main.print("You bumped into a " + floor.props[this.getPosX()][this.getPosY() + 1].getID());
                 }
@@ -66,7 +66,7 @@ public class Player extends BasicPerson {
             } else { //If the space im moving to has a prop in it
                 Prop moveTo = floor.props[getPosX()][getPosY()-1];
                 if(moveTo.isPassable()){ //If it is passable
-                    floor.setPropXYSwitch(getPosX(),getPosY(),getPosX(),getPosY()-1);
+                    floor.setPropSwitch(this, moveTo);
                 } else { //If it is not passable
                     Main.print("You bumped into a " + floor.props[this.getPosX()][this.getPosY() - 1].getID());
                 }
@@ -86,7 +86,7 @@ public class Player extends BasicPerson {
             } else { //If the space im moving to has a prop in it
                 Prop moveTo = floor.props[getPosX()-1][getPosY()];
                 if(moveTo.isPassable()){ //If it is passable
-                    floor.setPropXYSwitch(getPosX(),getPosY(),getPosX()+1,getPosY());
+                    floor.setPropSwitch(this, moveTo);
                 } else { //If it is not passable
                     Main.print("You bumped into a " + floor.props[this.getPosX()-1][this.getPosY()].getID());
                 }
@@ -106,7 +106,7 @@ public class Player extends BasicPerson {
             } else { //If the space im moving to has a prop in it
                 Prop moveTo = floor.props[getPosX()+1][getPosY()];
                 if(moveTo.isPassable()){ //If it is passable
-                    floor.setPropXYSwitch(getPosX(),getPosY(),getPosX()+1,getPosY());
+                    floor.setPropSwitch(this, moveTo);
                 } else { //If it is not passable
                     Main.print("You bumped into a " + floor.props[this.getPosX()+1][this.getPosY()].getID());
                 }
