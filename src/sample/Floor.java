@@ -41,12 +41,19 @@ public class Floor extends Group implements Serializable {
                 propImageViews[i][j].setTranslateZ(2);
 
             }
-            toRemove = new ArrayList<>();
+
             getChildren().addAll(floor[i]);
             getChildren().addAll(propImageViews[i]);
         }
+        toRemove = new ArrayList<>();
     }
-
+    public void addProp(Prop prop){
+        props[prop.getPosX()][prop.getPosY()] = prop;
+        setImage(prop.getPosX(),prop.getPosY(), prop.getImageID());
+        if(prop.getID().equals(ID.Wall)) wallCnt++;
+        else if(prop.getID().equals(ID.Person)) personCnt++;
+//        update();
+    }
 //    public void setPropXYSwitch(int x1, int y1, int x2, int y2){
 //        props[x1][y1].setXY(x2,y2); //player.setXY(x2,y2)
 //        props[x2][y2] = props[x1][y1]; //player is put into
@@ -68,6 +75,26 @@ public class Floor extends Group implements Serializable {
         props[prop1X][prop1Y] = prop2;
         update();
     }
+    public void clear(){
+        props = new Prop[WIDTH/scale][HEIGHT/scale];
+        propImageViews = new ImageView[WIDTH/scale][HEIGHT/scale];
+        toRemove.clear();
+        for(int i = 0; i < width; i++){
+            for(int j = 0; j < height; j++){
+                floor[i][j] = new ImageView(new Image(Main.genImages(fillTile)));
+                floor[i][j].setLayoutX(i*Main.scale);
+                floor[i][j].setLayoutY(j*Main.scale);
+
+                propImageViews[i][j] = new ImageView(new Image(Main.genImages(WALL_CORNER_SRC)));
+                propImageViews[i][j].setLayoutX(i*Main.scale);
+                propImageViews[i][j].setLayoutY(j*Main.scale);
+                propImageViews[i][j].setTranslateZ(2);
+            }
+            getChildren().addAll(floor[i]);
+            getChildren().addAll(propImageViews[i]);
+        }
+    }
+
     public void setPropXYNoSwitch(Prop prop, int x2, int y2){
         props[x2][y2] = prop;
         prop.setXY(x2,y2);
@@ -145,16 +172,7 @@ public class Floor extends Group implements Serializable {
             }
         }
     }
-    public void addProp(Prop prop){
-//        System.out.println(prop);
-//        System.out.println("x: " + prop.getPosX() + " y: " + prop.getPosY());
-        if(prop.getID() == ID.Player) return;
-        props[prop.getPosX()][prop.getPosY()] = prop;
-        setImage(prop.getPosX(),prop.getPosY(), prop.getImageID());
-        if(prop.getID().equals(ID.Wall)) wallCnt++;
-        else if(prop.getID().equals(ID.Person)) personCnt++;
-//        update();
-    }
+
     public void setImage(int x, int y, int imageID){
         propImageViews[x][y].setImage(new Image(Main.genImages(imageID)));
     }
@@ -198,6 +216,7 @@ public class Floor extends Group implements Serializable {
             for (int j = 0; j < height; j++) {
                 Prop prop = props[i][j];
                 if (prop != null) {
+                    moveUp(prop);
                     propImageViews[i][j].setImage(new Image(Objects.requireNonNull(genImages(prop.getImageID()))));
                     if(debug) System.out.print(prop);
                 } else {

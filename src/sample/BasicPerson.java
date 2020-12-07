@@ -16,11 +16,10 @@ public class BasicPerson extends Prop{
     }
 
     public void updatePosition() {
-        if(floor != null) {
-            floor.setImage(getPosX(),getPosY(),getImageID());
-
-        } else {
+        if(floor == null) {
             System.out.println("floor is null");
+        } else {
+            floor.setImage(getPosX(),getPosY(),getImageID());
         }
     }
     public void setFloor(Floor floor) {

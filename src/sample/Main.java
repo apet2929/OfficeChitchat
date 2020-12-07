@@ -26,13 +26,14 @@ public class Main extends Application {
     public static final int WIDTH = 1300;
     public static final int HEIGHT = 1000;
 //    private Rectangle rect;
-    private Floor floor = new Floor();
+    private Floor floor;
     public static final int scale = 50;
     private Player player;
     private GameStateManager gameStateManager;
     private Scene game;
     private Scene menu;
     private Scene cutscene;
+    private Scene gameOver;
     //Sidebar
     private static TextArea output = new TextArea();
 
@@ -54,27 +55,41 @@ public class Main extends Application {
     private File saveFile;
     @Override
     public void start(Stage primaryStage) throws Exception{
+        //Creating groups and scenes, setup
         Group gameRoot = new Group();
         Group menuRoot = new Group();
         Group cutsceneRoot = new Group();
+        Group gameOverRoot = new Group();
         game = new Scene(gameRoot, WIDTH, HEIGHT);
         menu = new Scene(menuRoot, WIDTH, HEIGHT);
         cutscene = new Scene(cutsceneRoot, WIDTH, HEIGHT);
-        gameStateManager = new GameStateManager(primaryStage, game,menu);
+        gameOver = new Scene(gameOverRoot, WIDTH, HEIGHT);
+        floor = new Floor();
+
+        //Setting gamestate
+        gameStateManager = new GameStateManager(primaryStage, game,menu, gameOver);
         gameStateManager.setCurGameState(GameStateManager.GameState.MAINMENU);
 
+        //Setting up save file
         saveFile = new File("save.fun");
-        generateMainMenu(menuRoot);
 
+        //Generating Layouts
+        generateMainMenu(menuRoot);
+        generateGameOver(gameOverRoot);
+
+        //Setting the scene
         primaryStage.setScene(menu);
 
+        //Setting up game
         gameRoot.getChildren().add(floor);
         gameRoot.getChildren().add(output);
 
+        //Handling input
         menu.setOnKeyPressed(this::handleInput);
         menu.setOnMouseClicked(this::handleInput);
         game.setOnKeyPressed(this::handleInput);
         game.setOnMouseClicked(this::handleInput);
+        gameOver.setOnMouseClicked(this::handleInput);
 
 
         //Cutscene testing
@@ -91,30 +106,12 @@ public class Main extends Application {
         primaryStage.show();
     }
 
+
     public void generateGame(){
-//                try{
-//            levelBuilder = (LevelBuilder) SaveManager.load("test2.fun");
-//            int[] walls = levelBuilder.objects.get("Walls");
-//            int[] people = levelBuilder.objects.get("People");
-//            int[] player = levelBuilder.objects.get("Player");
-//            if(walls != null) {
-//                for (int i = 0; i < walls.length - 1; i += 2) floor.addProp(new Wall(walls[i], walls[i + 1]));
-//            } else System.out.println("Walls is null");
-//            for(int i = 0; i < people.length-1; i+=2)floor.addProp(generateProp(ID.Person, people[i], people[i+1]));
-//            this.player = new Player(player[0], player[1], floor, Player.Status.Default);
-//            floor.addProp(this.player);
-//            }
-//        catch (Exception e){
-//            System.out.println("Couldn't load: " + e.getMessage());
-//
-//            e.printStackTrace();
-//            player = new Player(1, 1, this.floor, Player.Status.Default);
-//            floor.addProp(player);
-//            floor.addProp(new BasicPerson( 10,10,50,50, PLAYER_SRC, floor));
-//            Wall wall = new Wall( 5,5);
-//            floor.addProp(wall);
-//        }
-        player = new Player(1, 1, this.floor, Player.Status.Default);
+
+        player = new Player(1, 12, this.floor, Player.Status.Default);
+        floor.clear();
+        output.clear();
         floor.addProp(player);
         floor.addProp(new BasicPerson( 10,10,50,50, floor));
         Wall wall = new Wall( 5,5);
@@ -122,8 +119,120 @@ public class Main extends Application {
         floor.update();
     }
 
+    public void loadGame(){
+        try {
+            System.out.println("Loading");
+            FileInputStream fileStream = new FileInputStream(saveFile);
+            ObjectInputStream objectStream = new ObjectInputStream(fileStream);
+
+            floor.clear();
+
+            //Loading Player
+            player = (Player) objectStream.readObject();
+            player.setFloor(floor);
+            floor.addProp(player);
+            floor.setImage(player.getPosX(), player.getPosY(), player.getImageID());
+
+            //Loading all other props
+            Integer numProps = (Integer) (objectStream.readObject());
+            System.out.println("Number of props to be loaded: " + numProps);
+            for (int i = 0; i < numProps; i++) {
+                Prop temp = (Prop) (objectStream.readObject());
+                if (temp.getID() == ID.Person) {
+                    BasicPerson person = new BasicPerson(temp.getPosX(), temp.getPosY(), temp.width, temp.height, this.floor);
+                    floor.addProp(person);
+                } else if (temp.getID() == ID.Wall) {
+                    Wall wall = new Wall(temp.getPosX(), temp.getPosY());
+                    floor.addProp(wall);
+                }
+                floor.update();
+                floor.setImage(temp.getPosX(), temp.getPosY(), temp.getImageID());
+            }
+
+            objectStream.close();
+            fileStream.close();
+
+//                    floor.update();
+        }
+        catch (IOException | ClassNotFoundException ioException) {
+            System.out.println("Failed to load state");
+            ioException.printStackTrace();
+        }
+    }
+    public void saveGame(){
+        try {
+            System.out.println("Saving");
+            if(saveFile.delete()) {
+                saveFile.createNewFile();
+                FileOutputStream fos = new FileOutputStream(saveFile);
+                ObjectOutputStream oos = new ObjectOutputStream(fos);
+                player.floor = null;
+                oos.writeObject(player);
+                Integer numProps = -1;
+                for(Prop[] props : floor.props) {
+                    for (Prop prop : props) {
+                        if (prop != null) {
+                            numProps++;
+                        }
+                    }
+                }
+                oos.writeObject(numProps);
+                for(Prop[] props : floor.props) {
+                    for (Prop prop : props) {
+                        if (prop != null) {
+                            if(prop.getID() == ID.Person){
+                                BasicPerson person = (BasicPerson)(prop);
+                                person.floor = null;
+                                oos.writeObject(person);
+                                person.floor = this.floor;
+                            }
+                            else if (prop.getID() != ID.Player) {
+                                oos.writeObject(prop);
+                            }
+                        }
+                    }
+                }
+                oos.close();
+                fos.close();
+                player.floor = this.floor;
+
+            } else {
+                System.out.println("Couldn't delete save file");
+            }
+        }
+        catch (IOException i){
+            System.out.println("Failed to save state");
+            i.printStackTrace();
+        }
+    }
+    public void oldLoadGame(){
+        try{
+            levelBuilder = (LevelBuilder) SaveManager.load("test2.fun");
+            int[] walls = levelBuilder.objects.get("Walls");
+            int[] people = levelBuilder.objects.get("People");
+            int[] player = levelBuilder.objects.get("Player");
+            if(walls != null) {
+                for (int i = 0; i < walls.length - 1; i += 2) floor.addProp(new Wall(walls[i], walls[i + 1]));
+            } else System.out.println("Walls is null");
+            for(int i = 0; i < people.length-1; i+=2)floor.addProp(generateProp(ID.Person, people[i], people[i+1]));
+            this.player = new Player(player[0], player[1], floor, Player.Status.Default);
+            floor.addProp(this.player);
+            }
+        catch (Exception e){
+            System.out.println("Couldn't load: " + e.getMessage());
+
+            e.printStackTrace();
+            player = new Player(1, 1, this.floor, Player.Status.Default);
+            floor.addProp(player);
+            floor.addProp(new BasicPerson( 10,10,50,50, floor));
+            Wall wall = new Wall( 5,5);
+            floor.addProp(wall);
+        }
+    }
+
     private void handleInput(MouseEvent e){
 //        System.out.println("yes");
+        System.out.println("Handling input. Current game state is " + gameStateManager.getCurGameState());
         switch(gameStateManager.getCurGameState()){
             case MAINMENU -> {
                 handleMenu(e);
@@ -134,6 +243,9 @@ public class Main extends Application {
             case EDITOR -> {
                 handleEditor(e);
             }
+            case GAMEOVER -> {
+                handleMenu(e);
+            }
 
         }
     } //Mouse Input
@@ -142,6 +254,7 @@ public class Main extends Application {
             case GAME -> handleMovement(e);
             case MAINMENU -> handleMenu(e);
             case EDITOR -> handleEditor(e);
+            case GAMEOVER -> handleMenu(e);
         }
         if(e.getCode() == KeyCode.R) floor.update();
 
@@ -252,10 +365,33 @@ public class Main extends Application {
         Rectangle exitButton = new Rectangle(100,250,100,50);
         exitButton.setFill(null);
         exitButton.setStroke(Color.BLACK);
+        exitText.setOnMouseClicked(e -> Platform.exit());
         exitButton.setOnMouseClicked(e -> Platform.exit());
 
 
         menuRoot.getChildren().addAll(mainMenuText, playButton, playText, exitButton, exitText);
+    }
+    private void generateGameOver(Group gameOverRoot) {
+        Font buttonFont = Font.font(24);
+        Text gameOverText = new Text((WIDTH-300)/2, 50, "GAME OVER");
+        gameOverText.setFont(Font.font(50));
+
+        Text playText = new Text(110,130,"PLAY");
+
+        playText.setFont(buttonFont);
+        Rectangle playButton = new Rectangle(100,100,100,50);
+        playButton.setFill(null);
+        playButton.setStroke(Color.BLACK);
+        playButton.setOnMouseClicked(this::handleGameOver);
+
+        Text exitText = new Text(110,270, "EXIT");
+        exitText.setFont(buttonFont);
+        Rectangle exitButton = new Rectangle(100,250,100,50);
+        exitButton.setFill(null);
+        exitButton.setStroke(Color.BLACK);
+        exitButton.setOnMouseClicked(e -> Platform.exit());
+
+        gameOverRoot.getChildren().addAll(gameOverText, playButton, playText, exitButton, exitText);
     }
 
     private void generateCutsceneLayout(Group cutsceneRoot){
@@ -287,10 +423,15 @@ public class Main extends Application {
             generateGame();
             generateSidebar();
             gameStateManager.setCurGameState(GameStateManager.GameState.GAME);
-
         }
     }
-
+    private void handleGameOver(MouseEvent e){
+        if(e.getButton() == MouseButton.PRIMARY) {
+            loadGame();
+            generateSidebar();
+            gameStateManager.setCurGameState(GameStateManager.GameState.GAME);
+        }
+    }
 
 //    public static Cutscene getCutscene(int curCutscene) {
 //        if(curCutscene <= NUMCUTSCENES) {
@@ -376,80 +517,13 @@ public class Main extends Application {
                 System.out.println("You are now in the editor. Please refer to the editor guide for how to make a new floor.");
             }
             case ENTER -> {
-                try {
-                    System.out.println("Saving");
-                    if(saveFile.delete()) {
-                        saveFile.createNewFile();
-                        FileOutputStream fos = new FileOutputStream(saveFile);
-                        ObjectOutputStream oos = new ObjectOutputStream(fos);
-                        player.floor = null;
-                        oos.writeObject(player);
-                        for(Prop[] props : floor.props) {
-                            for (Prop prop : props) {
-                                if (prop != null) {
-                                    if(prop.getID() == ID.Person){
-                                        BasicPerson person = (BasicPerson)(prop);
-                                        person.floor = null;
-                                        oos.writeObject(person);
-                                        person.floor = this.floor;
-                                    }
-                                    else if (prop.getID() != ID.Player) {
-                                        oos.writeObject(prop);
-                                    }
-                                }
-                            }
-                        }
-                        oos.close();
-                        fos.close();
-                        player.floor = this.floor;
-
-                    } else {
-                        System.out.println("Couldn't delete save file");
-                    }
-                }
-                catch (IOException i){
-                    System.out.println("Failed to save state");
-                    i.printStackTrace();
-                }
+               saveGame();
             }
             case L -> {
-                try {
-                    System.out.println("Loading");
-                    FileInputStream fileStream = new FileInputStream(saveFile);
-                    ObjectInputStream objectStream = new ObjectInputStream(fileStream);
-
-                    //Loading Player
-                    floor.removeProp(player);
-                    player = (Player) objectStream.readObject();
-                    player.setFloor(floor);
-                    floor.addProp(player);
-                    floor.update();
-                    floor.setImage(player.getPosX(), player.getPosY(), player.getImageID());
-
-                    //Loading all other props
-                    boolean cont = true;
-                    while(cont){
-                        if(objectStream.available() == 0){
-                            cont = false;
-                        }
-                        else {
-                            Prop temp = (Prop) (objectStream.readObject());
-                            floor.addProp(temp);
-                            floor.update();
-                            floor.setImage(temp.getPosX(), temp.getPosY(), temp.getImageID());
-                        }
-                    }
-
-                    objectStream.close();
-                    fileStream.close();
-
-//                    floor.update();
-                }
-                catch (IOException | ClassNotFoundException ioException) {
-                    System.out.println("Failed to load state");
-                    ioException.printStackTrace();
-                }
-
+                loadGame();
+            }
+            case T -> {
+                gameStateManager.setCurGameState(GameStateManager.GameState.GAMEOVER);
             }
 
             default -> System.out.println("default");
