@@ -9,6 +9,7 @@ public class BasicPerson extends Prop{
         super(ID.Person, true, x, y, width, height, "Your coworker and co-sufferer", Main.PLAYER_UP_SRC);
         if(floor != null){
             this.floor = floor;
+            this.floor.addProp(this);
         }
         this.setImageID(Main.PLAYER_UP_SRC);
         updatePosition();
@@ -21,5 +22,9 @@ public class BasicPerson extends Prop{
         } else {
             System.out.println("floor is null");
         }
+    }
+    public void setFloor(Floor floor) {
+        this.floor = floor;
+        this.floor.addProp(this);
     }
 }

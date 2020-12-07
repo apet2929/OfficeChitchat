@@ -119,7 +119,7 @@ public class Main extends Application {
         floor.addProp(new BasicPerson( 10,10,50,50, floor));
         Wall wall = new Wall( 5,5);
         floor.addProp(wall);
-
+        floor.update();
     }
 
     private void handleInput(MouseEvent e){
@@ -377,11 +377,35 @@ public class Main extends Application {
             }
             case ENTER -> {
                 try {
-                    FileOutputStream fos = new FileOutputStream(saveFile);
-                    ObjectOutputStream oos = new ObjectOutputStream(fos);
-                    oos.writeObject(player);
-                    oos.close();
-                    fos.close();
+                    System.out.println("Saving");
+                    if(saveFile.delete()) {
+                        saveFile.createNewFile();
+                        FileOutputStream fos = new FileOutputStream(saveFile);
+                        ObjectOutputStream oos = new ObjectOutputStream(fos);
+                        player.floor = null;
+                        oos.writeObject(player);
+                        for(Prop[] props : floor.props) {
+                            for (Prop prop : props) {
+                                if (prop != null) {
+                                    if(prop.getID() == ID.Person){
+                                        BasicPerson person = (BasicPerson)(prop);
+                                        person.floor = null;
+                                        oos.writeObject(person);
+                                        person.floor = this.floor;
+                                    }
+                                    else if (prop.getID() != ID.Player) {
+                                        oos.writeObject(prop);
+                                    }
+                                }
+                            }
+                        }
+                        oos.close();
+                        fos.close();
+                        player.floor = this.floor;
+
+                    } else {
+                        System.out.println("Couldn't delete save file");
+                    }
                 }
                 catch (IOException i){
                     System.out.println("Failed to save state");
@@ -390,14 +414,36 @@ public class Main extends Application {
             }
             case L -> {
                 try {
+                    System.out.println("Loading");
                     FileInputStream fileStream = new FileInputStream(saveFile);
                     ObjectInputStream objectStream = new ObjectInputStream(fileStream);
+
+                    //Loading Player
+                    floor.removeProp(player);
                     player = (Player) objectStream.readObject();
                     player.setFloor(floor);
+                    floor.addProp(player);
+                    floor.update();
+                    floor.setImage(player.getPosX(), player.getPosY(), player.getImageID());
+
+                    //Loading all other props
+                    boolean cont = true;
+                    while(cont){
+                        if(objectStream.available() == 0){
+                            cont = false;
+                        }
+                        else {
+                            Prop temp = (Prop) (objectStream.readObject());
+                            floor.addProp(temp);
+                            floor.update();
+                            floor.setImage(temp.getPosX(), temp.getPosY(), temp.getImageID());
+                        }
+                    }
+
                     objectStream.close();
                     fileStream.close();
-                    System.out.println("Loading");
-                    floor.update();
+
+//                    floor.update();
                 }
                 catch (IOException | ClassNotFoundException ioException) {
                     System.out.println("Failed to load state");

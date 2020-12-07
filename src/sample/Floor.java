@@ -5,7 +5,9 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
 import java.io.Serializable;
+import java.lang.reflect.Array;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -23,6 +25,7 @@ public class Floor extends Group implements Serializable {
     public int fillTile;
     public int wallCnt = 0;
     public int personCnt = 0;
+    private ArrayList<Prop> toRemove;
     public Floor(){
         System.out.println(props.length);
         fillTile = FLOOR_SRC;
@@ -38,6 +41,7 @@ public class Floor extends Group implements Serializable {
                 propImageViews[i][j].setTranslateZ(2);
 
             }
+            toRemove = new ArrayList<>();
             getChildren().addAll(floor[i]);
             getChildren().addAll(propImageViews[i]);
         }
@@ -49,7 +53,9 @@ public class Floor extends Group implements Serializable {
 //        props[x2][y2].setXY(x1,y1);
 //        update();
 //    }
-
+    public void removeProp(Prop prop){
+        toRemove.add(prop);
+    }
     public void setPropSwitch(Prop prop1, Prop prop2){
         System.out.println("Switching " + prop1 + " and " + prop2);
         int prop1X = prop1.getPosX();
@@ -75,13 +81,79 @@ public class Floor extends Group implements Serializable {
             }
         }
     }
+    public void moveUp(Prop prop){
+        if(prop.getPosY() > 0){
+            if(props[prop.getPosX()][prop.getPosY()-1] == null){ //If the space im moving into is empty
+                props[prop.getPosX()][prop.getPosY()-1] = prop;
+                props[prop.getPosX()][prop.getPosY()] = null;
+                prop.setPosY(prop.getPosY()-1);
+            } else { //If the space im moving to has a prop in it
+                Prop moveTo = props[prop.getPosX()][prop.getPosY()-1];
+                if(moveTo.isPassable()){ //If it is passable
+                    setPropSwitch(prop, moveTo);
+                } else { //If it is not passable
+                    Main.print("You bumped into a " + props[prop.getPosX()][prop.getPosY() - 1].getID());
+                }
+            }
+        }
+    }
+    public void moveDown(Prop prop){
+        if(prop.getPosY() < getHeight()){
+            if(props[prop.getPosX()][prop.getPosY()+1] == null){ //If the space im moving into is empty
+                props[prop.getPosX()][prop.getPosY()+1] = prop;
+                props[prop.getPosX()][prop.getPosY()] = null;
+                prop.setPosY(prop.getPosY()+1);
+            } else { //If the space im moving to has a prop in it
+                Prop moveTo = props[prop.getPosX()][prop.getPosY()+1];
+                if(moveTo.isPassable()){ //If it is passable
+                    setPropSwitch(prop, moveTo);
+                } else { //If it is not passable
+                    Main.print("You bumped into a " + props[prop.getPosX()][prop.getPosY() + 1].getID());
+                }
+            }
+        }
+    }
+    public void moveLeft(Prop prop){
+        if(prop.getPosX() > 0){
+            if(props[prop.getPosX()][prop.getPosX()-1] == null){ //If the space im moving into is empty
+                props[prop.getPosX()][prop.getPosX()-1] = prop;
+                props[prop.getPosX()][prop.getPosX()] = null;
+                prop.setPosY(prop.getPosX()-1);
+            } else { //If the space im moving to has a prop in it
+                Prop moveTo = props[prop.getPosX()][prop.getPosX()-1];
+                if(moveTo.isPassable()){ //If it is passable
+                    setPropSwitch(prop, moveTo);
+                } else { //If it is not passable
+                    Main.print("You bumped into a " + props[prop.getPosX()][prop.getPosX() - 1].getID());
+                }
+            }
+        }
+    }
+    public void moveRight(Prop prop){
+        if(prop.getPosX() < getWidth()){
+            if(props[prop.getPosX()][prop.getPosX()+1] == null){ //If the space im moving into is empty
+                props[prop.getPosX()][prop.getPosX()+1] = prop;
+                props[prop.getPosX()][prop.getPosX()] = null;
+                prop.setPosY(prop.getPosX()+1);
+            } else { //If the space im moving to has a prop in it
+                Prop moveTo = props[prop.getPosX()][prop.getPosX()+1];
+                if(moveTo.isPassable()){ //If it is passable
+                    setPropSwitch(prop, moveTo);
+                } else { //If it is not passable
+                    Main.print("You bumped into a " + props[prop.getPosX()][prop.getPosX() +1].getID());
+                }
+            }
+        }
+    }
     public void addProp(Prop prop){
 //        System.out.println(prop);
 //        System.out.println("x: " + prop.getPosX() + " y: " + prop.getPosY());
+        if(prop.getID() == ID.Player) return;
         props[prop.getPosX()][prop.getPosY()] = prop;
+        setImage(prop.getPosX(),prop.getPosY(), prop.getImageID());
         if(prop.getID().equals(ID.Wall)) wallCnt++;
         else if(prop.getID().equals(ID.Person)) personCnt++;
-        update();
+//        update();
     }
     public void setImage(int x, int y, int imageID){
         propImageViews[x][y].setImage(new Image(Main.genImages(imageID)));
@@ -116,36 +188,23 @@ public class Floor extends Group implements Serializable {
         return height;
     }
     public void update(){
+        System.out.println("Updating");
+        for(Prop prop: toRemove){
+            System.out.println("Removed " + prop);
+            props[prop.getPosX()][prop.getPosY()] = null;
+        }
+        toRemove.clear();
         for(int i = 0; i < width; i++) {
             for (int j = 0; j < height; j++) {
                 Prop prop = props[i][j];
                 if (prop != null) {
-//                    System.out.println(prop.getID() + " " + prop.getImageID());
                     propImageViews[i][j].setImage(new Image(Objects.requireNonNull(genImages(prop.getImageID()))));
-//                    else{
-//                        imageViews[i][j].setImage(Main.FLOOR_SRC);
-//                    }
-//                    switch (prop.getID()) {
-//                        case Wall: {
-//                            imageViews[i][j].setImage(Main.WALL_SRC);
-//                            System.out.println(prop);
-//                        }
-//                        case Empty:
-//                            imageViews[i][j].setImage(Main.FLOOR_SRC);
-//                        case Person:
-//                            imageViews[i][j].setImage(Main.PLAYER_SRC);
-//                        default: {
-//                            imageViews[i][j].setImage(Main.FLOOR_SRC);
-//                            System.out.println(prop + " default");
-//                        }
-//                    }
                     if(debug) System.out.print(prop);
                 } else {
                     propImageViews[i][j].setImage(null);
                 }
             }
         }
-        System.out.println("Updating");
     }
     @Override
     public String toString() {

@@ -121,8 +121,4 @@ public class Player extends BasicPerson {
         this.floor.update();
     }
 
-
-    public void setFloor(Floor floor) {
-        this.floor = floor;
-    }
 }
