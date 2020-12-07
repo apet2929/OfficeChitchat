@@ -4,6 +4,8 @@ public enum ID {
     Wall(),
     Player(),
     Person(),
-    Empty()
+    Empty(),
+    Spike(),
+
 
 }

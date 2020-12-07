@@ -84,11 +84,15 @@ public class Floor extends Group implements Serializable {
                 floor[i][j] = new ImageView(new Image(Main.genImages(fillTile)));
                 floor[i][j].setLayoutX(i*Main.scale);
                 floor[i][j].setLayoutY(j*Main.scale);
+                floor[i][j].setFitHeight(scale);
+                floor[i][j].setFitWidth(scale);
 
                 propImageViews[i][j] = new ImageView(new Image(Main.genImages(WALL_CORNER_SRC)));
                 propImageViews[i][j].setLayoutX(i*Main.scale);
                 propImageViews[i][j].setLayoutY(j*Main.scale);
                 propImageViews[i][j].setTranslateZ(2);
+                propImageViews[i][j].setFitHeight(scale);
+                propImageViews[i][j].setFitWidth(scale);
             }
             getChildren().addAll(floor[i]);
             getChildren().addAll(propImageViews[i]);
@@ -205,7 +209,8 @@ public class Floor extends Group implements Serializable {
     public int getHeight() {
         return height;
     }
-    public void update(){
+
+    public void update(){ //May seperate this into tick and render methods.
         System.out.println("Updating");
         for(Prop prop: toRemove){
             System.out.println("Removed " + prop);
@@ -216,7 +221,6 @@ public class Floor extends Group implements Serializable {
             for (int j = 0; j < height; j++) {
                 Prop prop = props[i][j];
                 if (prop != null) {
-                    moveUp(prop);
                     propImageViews[i][j].setImage(new Image(Objects.requireNonNull(genImages(prop.getImageID()))));
                     if(debug) System.out.print(prop);
                 } else {

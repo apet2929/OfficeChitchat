@@ -16,12 +16,13 @@ public class Prop implements Serializable {
     private String description;
 //    public static Prop FLOOR = new Prop(ID.Empty, true, 0, 0, 50, 50, "There's nothing there.", 0);
     public static Prop PERSON = new BasicPerson( 0,0,50,50, null);
-    public static Prop WALL = new Wall(0,0);
+    public static Prop WALL = new Wall(0,0, null);
     private int imageID;
     //    private Image sprite;
 
     public int width, height;
-    public Prop(ID id, boolean passable, int x, int y, int width, int height, String description, int imageID){
+
+    public Prop(ID id, boolean passable, int x, int y, int width, int height, String description, int imageID, Floor floor){
         this.id = id;
         this.passable = passable;
         this.x = x;
@@ -29,15 +30,17 @@ public class Prop implements Serializable {
         this.description = description;
         this.width = width;
         this.height = height;
+        this.imageID = imageID;
+        if(floor != null){
+            floor.setImage(x,y,imageID);
+            floor.addProp(this);
+        }
+
     }
 
-    public static Prop getEmptyProp() {
-        return new Prop(ID.Empty, true, 0, 0, 50, 50, "There's nothing there.", 0);
 
-    }
-
-    public static Prop clone(Prop prop) {
-        return new Prop(prop.getID(), prop.passable,  prop.x, prop.y, prop.width, prop.height, prop.getDescription(), prop.getImageID());
+    public static Prop clone(Prop prop, Floor floor) {
+        return new Prop(prop.getID(), prop.passable,  prop.x, prop.y, prop.width, prop.height, prop.getDescription(), prop.getImageID(), floor);
     }
 
     public ID getID() {

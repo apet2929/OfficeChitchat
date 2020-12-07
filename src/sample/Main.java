@@ -109,13 +109,14 @@ public class Main extends Application {
 
     public void generateGame(){
 
-        player = new Player(1, 12, this.floor, Player.Status.Default);
+        player = new Player(1, 12, this.floor, Player.Status.Default, gameStateManager);
         floor.clear();
         output.clear();
         floor.addProp(player);
-        floor.addProp(new BasicPerson( 10,10,50,50, floor));
-        Wall wall = new Wall( 5,5);
+        floor.addProp(new BasicPerson( 10,10,scale,scale, floor));
+        Wall wall = new Wall( 5,5, floor);
         floor.addProp(wall);
+        Spike spike = new Spike(2,2, scale, scale, WALL_CORNER_SRC, floor);
         floor.update();
     }
 
@@ -129,7 +130,8 @@ public class Main extends Application {
 
             //Loading Player
             player = (Player) objectStream.readObject();
-            player.setFloor(floor);
+            player.floor = floor;
+            player.gameStateManager = gameStateManager;
             floor.addProp(player);
             floor.setImage(player.getPosX(), player.getPosY(), player.getImageID());
 
@@ -142,8 +144,11 @@ public class Main extends Application {
                     BasicPerson person = new BasicPerson(temp.getPosX(), temp.getPosY(), temp.width, temp.height, this.floor);
                     floor.addProp(person);
                 } else if (temp.getID() == ID.Wall) {
-                    Wall wall = new Wall(temp.getPosX(), temp.getPosY());
+                    Wall wall = new Wall(temp.getPosX(), temp.getPosY(), floor);
                     floor.addProp(wall);
+                } else if(temp.getID() == ID.Spike){
+                    Spike spike = new Spike(temp.getPosX(), temp.getPosY(), temp.width, temp.height, temp.getImageID(), floor);
+                    floor.addProp(spike);
                 }
                 floor.update();
                 floor.setImage(temp.getPosX(), temp.getPosY(), temp.getImageID());
@@ -167,6 +172,7 @@ public class Main extends Application {
                 FileOutputStream fos = new FileOutputStream(saveFile);
                 ObjectOutputStream oos = new ObjectOutputStream(fos);
                 player.floor = null;
+                player.gameStateManager = null;
                 oos.writeObject(player);
                 Integer numProps = -1;
                 for(Prop[] props : floor.props) {
@@ -182,9 +188,7 @@ public class Main extends Application {
                         if (prop != null) {
                             if(prop.getID() == ID.Person){
                                 BasicPerson person = (BasicPerson)(prop);
-                                person.floor = null;
                                 oos.writeObject(person);
-                                person.floor = this.floor;
                             }
                             else if (prop.getID() != ID.Player) {
                                 oos.writeObject(prop);
@@ -195,6 +199,7 @@ public class Main extends Application {
                 oos.close();
                 fos.close();
                 player.floor = this.floor;
+                player.gameStateManager = this.gameStateManager;
 
             } else {
                 System.out.println("Couldn't delete save file");
@@ -212,20 +217,20 @@ public class Main extends Application {
             int[] people = levelBuilder.objects.get("People");
             int[] player = levelBuilder.objects.get("Player");
             if(walls != null) {
-                for (int i = 0; i < walls.length - 1; i += 2) floor.addProp(new Wall(walls[i], walls[i + 1]));
+                for (int i = 0; i < walls.length - 1; i += 2) floor.addProp(new Wall(walls[i], walls[i + 1], floor));
             } else System.out.println("Walls is null");
             for(int i = 0; i < people.length-1; i+=2)floor.addProp(generateProp(ID.Person, people[i], people[i+1]));
-            this.player = new Player(player[0], player[1], floor, Player.Status.Default);
+            this.player = new Player(player[0], player[1], floor, Player.Status.Default, gameStateManager);
             floor.addProp(this.player);
             }
         catch (Exception e){
             System.out.println("Couldn't load: " + e.getMessage());
 
             e.printStackTrace();
-            player = new Player(1, 1, this.floor, Player.Status.Default);
+            player = new Player(1, 1, this.floor, Player.Status.Default, gameStateManager);
             floor.addProp(player);
             floor.addProp(new BasicPerson( 10,10,50,50, floor));
-            Wall wall = new Wall( 5,5);
+            Wall wall = new Wall( 5,5, floor);
             floor.addProp(wall);
         }
     }
@@ -277,18 +282,13 @@ public class Main extends Application {
     private void handleEditor(KeyEvent e){
         switch (e.getCode()){
             case A -> {
-                selectedProp = Prop.clone(Prop.getEmptyProp());
+                selectedProp = Prop.clone(Prop.WALL, floor);
             }
             case B -> {
-                selectedProp = Prop.clone(Prop.WALL);
+                selectedProp = Prop.clone(Prop.PERSON, floor);
+                BasicPerson test = (BasicPerson) selectedProp;
             }
             case C -> {
-                selectedProp = Prop.clone(Prop.PERSON);
-                BasicPerson test = (BasicPerson) selectedProp;
-                test.floor = floor;
-                test.updatePosition();
-            }
-            case D -> {
                 if(player != null){
                     selectedProp = player; //Make sure player is initialized before you do this.
                     System.out.println("Make sure you only put one player down, or else the program will break");
@@ -313,7 +313,7 @@ public class Main extends Application {
                 case Empty:
                     return null;
                 case Wall:
-                    return new Wall(x, y);
+                    return new Wall(x, y, floor);
                 case Person:
                     return new BasicPerson(x, y, 50, 50, floor);
             }
