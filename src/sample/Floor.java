@@ -1,8 +1,12 @@
 package sample;
 
+import javafx.animation.Animation;
+import javafx.animation.Transition;
+import javafx.animation.TranslateTransition;
 import javafx.scene.Group;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.util.Duration;
 
 import java.io.Serializable;
 import java.lang.reflect.Array;
@@ -21,14 +25,20 @@ public class Floor extends Group implements Serializable {
     public Prop[][] props = new Prop[width][height];
     private final ImageView[][] floor = new ImageView[width][height];
     public ImageView[][] propImageViews = new ImageView[width][height];
-    private final boolean debug = true;
+    private final boolean debug = false;
     public int fillTile;
     public int wallCnt = 0;
     public int personCnt = 0;
     private ArrayList<Prop> toRemove;
+    private TranslateTransition transition;
     public Floor(){
         System.out.println(props.length);
         fillTile = FLOOR_SRC;
+        this.transition = new TranslateTransition();
+        transition.setDuration(new Duration(1000));
+        transition.setAutoReverse(false);
+        transition.setCycleCount(1);
+
         for(int i = 0; i < width; i++){
             for(int j = 0; j < height; j++){
                 floor[i][j] = new ImageView(new Image(Main.genImages(fillTile)));
@@ -75,6 +85,15 @@ public class Floor extends Group implements Serializable {
         props[prop1X][prop1Y] = prop2;
         update();
     }
+    public void playAnimation(TranslateTransition transition, int x, int y){
+        if(propImageViews[x][y] != null){
+            transition.setNode(propImageViews[x][y]);
+            transition.play();
+        } else {
+            System.out.println("The ImageView the animation is applied to is null");
+        }
+
+    }
     public void clear(){
         props = new Prop[WIDTH/scale][HEIGHT/scale];
         propImageViews = new ImageView[WIDTH/scale][HEIGHT/scale];
@@ -112,7 +131,7 @@ public class Floor extends Group implements Serializable {
             }
         }
     }
-    public void moveUp(Prop prop){
+    public Prop moveUp(Prop prop){
         if(prop.getPosY() > 0){
             if(props[prop.getPosX()][prop.getPosY()-1] == null){ //If the space im moving into is empty
                 props[prop.getPosX()][prop.getPosY()-1] = prop;
@@ -125,10 +144,14 @@ public class Floor extends Group implements Serializable {
                 } else { //If it is not passable
                     Main.print("You bumped into a " + props[prop.getPosX()][prop.getPosY() - 1].getID());
                 }
+                update();
+                return moveTo;
             }
         }
+        update();
+        return null;
     }
-    public void moveDown(Prop prop){
+    public Prop moveDown(Prop prop){
         if(prop.getPosY() < getHeight()){
             if(props[prop.getPosX()][prop.getPosY()+1] == null){ //If the space im moving into is empty
                 props[prop.getPosX()][prop.getPosY()+1] = prop;
@@ -141,10 +164,15 @@ public class Floor extends Group implements Serializable {
                 } else { //If it is not passable
                     Main.print("You bumped into a " + props[prop.getPosX()][prop.getPosY() + 1].getID());
                 }
+                update();
+                return moveTo;
             }
         }
+        update();
+        return null;
     }
-    public void moveLeft(Prop prop){
+
+    public Prop moveLeft(Prop prop){
         if(prop.getPosX() > 0){
             if(props[prop.getPosX()][prop.getPosX()-1] == null){ //If the space im moving into is empty
                 props[prop.getPosX()][prop.getPosX()-1] = prop;
@@ -157,10 +185,14 @@ public class Floor extends Group implements Serializable {
                 } else { //If it is not passable
                     Main.print("You bumped into a " + props[prop.getPosX()][prop.getPosX() - 1].getID());
                 }
+                update();
+                return moveTo;
             }
         }
+        update();
+        return null;
     }
-    public void moveRight(Prop prop){
+    public Prop moveRight(Prop prop){
         if(prop.getPosX() < getWidth()){
             if(props[prop.getPosX()][prop.getPosX()+1] == null){ //If the space im moving into is empty
                 props[prop.getPosX()][prop.getPosX()+1] = prop;
@@ -173,8 +205,12 @@ public class Floor extends Group implements Serializable {
                 } else { //If it is not passable
                     Main.print("You bumped into a " + props[prop.getPosX()][prop.getPosX() +1].getID());
                 }
+                update();
+                return moveTo;
             }
         }
+        update();
+        return null;
     }
 
     public void setImage(int x, int y, int imageID){

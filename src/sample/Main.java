@@ -1,5 +1,6 @@
 package sample;
 
+import javafx.animation.TranslateTransition;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.Group;
@@ -16,6 +17,7 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 import java.io.*;
 import java.util.Arrays;
@@ -106,7 +108,21 @@ public class Main extends Application {
         primaryStage.show();
     }
 
-
+//    public void test(Stage primaryStage){
+//        Group test = new Group();
+//        Scene scene = new Scene(test, WIDTH, HEIGHT);
+//        Rectangle rect = new Rectangle(200,50,100,100);
+//        TranslateTransition translateTransition = new TranslateTransition();
+//        translateTransition.setNode(rect);
+//        translateTransition.setByX(500);
+//        translateTransition.setCycleCount(1);
+//        translateTransition.setDuration(new Duration(5000));
+//        translateTransition.setAutoReverse(false);
+//
+//        translateTransition.play();
+//        test.getChildren().add(rect);
+//        primaryStage.setScene(scene);
+//    }
     public void generateGame(){
 
         player = new Player(1, 12, this.floor, Player.Status.Default, gameStateManager);
@@ -116,7 +132,7 @@ public class Main extends Application {
         floor.addProp(new BasicPerson( 10,10,scale,scale, floor));
         Wall wall = new Wall( 5,5, floor);
         floor.addProp(wall);
-        Spike spike = new Spike(2,2, scale, scale, WALL_CORNER_SRC, floor);
+        Spike spike = new Spike(2,2, scale, scale, SPIKE_SRC, floor);
         floor.update();
     }
 
@@ -556,6 +572,7 @@ public class Main extends Application {
     public static final int PLAYER_DOWN_SRC = 4;
     public static final int PLAYER_RIGHT_SRC = 5;
     public static final int WALL_CORNER_SRC = 6;
+    public static final int SPIKE_SRC = 7;
 
     public static FileInputStream genImages(int id){
         try{
@@ -567,6 +584,7 @@ public class Main extends Application {
                 case 4 -> new FileInputStream("F:\\Documents\\Code\\OfficeChitchat\\src\\sample\\assets\\player_down.png");
                 case 5 -> new FileInputStream("F:\\Documents\\Code\\OfficeChitchat\\src\\sample\\assets\\player_right.png");
                 case 6 -> new FileInputStream("F:\\Documents\\Code\\OfficeChitchat\\src\\sample\\assets\\wall_corner.png");
+                case 7 -> new FileInputStream("F:\\Documents\\Code\\OfficeChitchat\\src\\sample\\assets\\spike.png");
                 default -> throw new IllegalStateException("Unexpected value: " + id);
             };
         } catch (FileNotFoundException e) {
