@@ -37,7 +37,7 @@ public class Main extends Application {
     private Scene cutscene;
     private Scene gameOver;
     //Sidebar
-    private static TextArea output = new TextArea();
+    public static TextArea output = new TextArea();
 
     //Cutscenes
     private static final int NUMCUTSCENES = 1;
@@ -47,7 +47,7 @@ public class Main extends Application {
     private ImageView cutSceneImage;
 
     //Editor
-    private Prop selectedProp;
+    private ID selectedProp;
 
     //Sprite sources
 
@@ -73,8 +73,7 @@ public class Main extends Application {
         gameStateManager.setCurGameState(GameStateManager.GameState.MAINMENU);
 
         //Setting up save file
-        saveFile = new File("save.fun");
-
+        saveFile = new File("floor1.fun");
         //Generating Layouts
         generateMainMenu(menuRoot);
         generateGameOver(gameOverRoot);
@@ -125,21 +124,22 @@ public class Main extends Application {
 //    }
     public void generateGame(){
 
-        player = new Player(1, 12, this.floor, Player.Status.Default, gameStateManager);
-        floor.clear();
-        output.clear();
-        floor.addProp(player);
-        floor.addProp(new BasicPerson( 10,10,scale,scale, floor));
-        Wall wall = new Wall( 5,5, floor);
-        floor.addProp(wall);
-        Spike spike = new Spike(2,2, scale, scale, SPIKE_SRC, floor);
-        floor.update();
+//        player = new Player(1, 12, this.floor, Player.Status.Default, gameStateManager);
+//        floor.clear();
+//        output.clear();
+//        floor.addProp(player);
+//        floor.addProp(new BasicPerson( 10,10,scale,scale, floor));
+//        Wall wall = new Wall( 5,5, floor);
+//        floor.addProp(wall);
+//        Spike spike = new Spike(2,2, scale, scale, SPIKE_SRC, floor);
+//        floor.update();
+        loadGame(saveFile);
     }
 
-    public void loadGame(){
+    public void loadGame(File file){
         try {
             System.out.println("Loading");
-            FileInputStream fileStream = new FileInputStream(saveFile);
+            FileInputStream fileStream = new FileInputStream(file);
             ObjectInputStream objectStream = new ObjectInputStream(fileStream);
 
             floor.clear();
@@ -155,19 +155,19 @@ public class Main extends Application {
             Integer numProps = (Integer) (objectStream.readObject());
             System.out.println("Number of props to be loaded: " + numProps);
             for (int i = 0; i < numProps; i++) {
-                Prop temp = (Prop) (objectStream.readObject());
-                if (temp.getID() == ID.Person) {
-                    BasicPerson person = new BasicPerson(temp.getPosX(), temp.getPosY(), temp.width, temp.height, this.floor);
-                    floor.addProp(person);
-                } else if (temp.getID() == ID.Wall) {
-                    Wall wall = new Wall(temp.getPosX(), temp.getPosY(), floor);
-                    floor.addProp(wall);
-                } else if(temp.getID() == ID.Spike){
-                    Spike spike = new Spike(temp.getPosX(), temp.getPosY(), temp.width, temp.height, temp.getImageID(), floor);
-                    floor.addProp(spike);
-                }
-                floor.update();
-                floor.setImage(temp.getPosX(), temp.getPosY(), temp.getImageID());
+                Prop temp = (Prop) (objectStream.readObject()); //We need to do this because we cannot serialize floors. Maybe fix this later?
+//                if (temp.getID() == ID.Person) {
+//                    BasicPerson person = new BasicPerson(temp.getPosX(), temp.getPosY(), temp.width, temp.height, this.floor);
+//                    floor.addProp(person);
+//                } else if (temp.getID() == ID.Wall) {
+//                    Wall wall = new Wall(temp.getPosX(), temp.getPosY(), floor);
+//                    floor.addProp(wall);
+//                } else if(temp.getID() == ID.Spike){
+//                    Spike spike = new Spike(temp.getPosX(), temp.getPosY(), floor);
+//                    floor.addProp(spike);
+//                }
+                System.out.println(temp);
+                temp.setFloor(floor);
             }
 
             objectStream.close();
@@ -175,51 +175,50 @@ public class Main extends Application {
 
 //                    floor.update();
         }
-        catch (IOException | ClassNotFoundException ioException) {
+        catch (IOException | ClassNotFoundException exception) {
             System.out.println("Failed to load state");
-            ioException.printStackTrace();
+            exception.printStackTrace();
+            player = new Player(1, 12, this.floor, Player.Status.Default, gameStateManager);
+            floor.addProp(player);
+            floor.addProp(new BasicPerson( 10,10,scale,scale, floor));
+            Wall wall = new Wall( 5,5, floor);
+            floor.addProp(wall);
+            Spike spike = new Spike(2,2, floor);
+            floor.update();
         }
     }
-    public void saveGame(){
+    public void saveGame(File file){
         try {
             System.out.println("Saving");
-            if(saveFile.delete()) {
-                saveFile.createNewFile();
-                FileOutputStream fos = new FileOutputStream(saveFile);
-                ObjectOutputStream oos = new ObjectOutputStream(fos);
-                player.floor = null;
-                player.gameStateManager = null;
-                oos.writeObject(player);
-                Integer numProps = -1;
-                for(Prop[] props : floor.props) {
-                    for (Prop prop : props) {
-                        if (prop != null) {
-                            numProps++;
-                        }
+            file.createNewFile();
+            FileOutputStream fos = new FileOutputStream(file);
+            ObjectOutputStream oos = new ObjectOutputStream(fos);
+            player.floor = null;
+            player.gameStateManager = null;
+            oos.writeObject(player);
+            Integer numProps = -1;
+            for(Prop[] props : floor.props) {
+                for (Prop prop : props) {
+                    if (prop != null) {
+                        numProps++;
                     }
                 }
-                oos.writeObject(numProps);
-                for(Prop[] props : floor.props) {
-                    for (Prop prop : props) {
-                        if (prop != null) {
-                            if(prop.getID() == ID.Person){
-                                BasicPerson person = (BasicPerson)(prop);
-                                oos.writeObject(person);
-                            }
-                            else if (prop.getID() != ID.Player) {
-                                oos.writeObject(prop);
-                            }
-                        }
-                    }
-                }
-                oos.close();
-                fos.close();
-                player.floor = this.floor;
-                player.gameStateManager = this.gameStateManager;
-
-            } else {
-                System.out.println("Couldn't delete save file");
             }
+            oos.writeObject(numProps);
+            for(Prop[] props : floor.props) {
+                for (Prop prop : props) {
+                    if (prop != null) {
+                        prop.floor = null;
+                        oos.writeObject(prop);
+                    }
+                }
+            }
+            oos.close();
+            fos.close();
+            gameStateManager.setCurGameState(GameStateManager.GameState.GAME);
+            player.floor = this.floor;
+            player.gameStateManager = this.gameStateManager;
+
         }
         catch (IOException i){
             System.out.println("Failed to save state");
@@ -228,17 +227,29 @@ public class Main extends Application {
     }
     public void oldLoadGame(){
         try{
-            levelBuilder = (LevelBuilder) SaveManager.load("test2.fun");
+            String floorName = "test2.fun";
+            levelBuilder = (LevelBuilder) SaveManager.load(floorName);
             int[] walls = levelBuilder.objects.get("Walls");
             int[] people = levelBuilder.objects.get("People");
+            int[] spikes = levelBuilder.objects.get("Spikes");
             int[] player = levelBuilder.objects.get("Player");
             if(walls != null) {
                 for (int i = 0; i < walls.length - 1; i += 2) floor.addProp(new Wall(walls[i], walls[i + 1], floor));
             } else System.out.println("Walls is null");
-            for(int i = 0; i < people.length-1; i+=2)floor.addProp(generateProp(ID.Person, people[i], people[i+1]));
-            this.player = new Player(player[0], player[1], floor, Player.Status.Default, gameStateManager);
-            floor.addProp(this.player);
-            }
+            if(people != null) {
+                for (int i = 0; i < people.length - 1; i += 2)
+                    floor.addProp(generateProp(ID.Person, people[i], people[i + 1]));
+            } else System.out.println("People is null");
+            if(spikes != null) {
+                for (int i = 0; i < spikes.length - 1; i += 2)
+                    floor.addProp(generateProp(ID.Spike, spikes[i], spikes[i + 1]));
+            } else System.out.println("People is null");
+            if(player != null) {
+                this.player = new Player(player[0], player[1], floor, Player.Status.Default, gameStateManager);
+                floor.addProp(this.player);
+            } else System.out.println("Player is null");
+
+        }
         catch (Exception e){
             System.out.println("Couldn't load: " + e.getMessage());
 
@@ -249,6 +260,7 @@ public class Main extends Application {
             Wall wall = new Wall( 5,5, floor);
             floor.addProp(wall);
         }
+        floor.update();
     }
 
     private void handleInput(MouseEvent e){
@@ -287,9 +299,9 @@ public class Main extends Application {
         int y = (int) ((e.getY()/HEIGHT)*floor.getHeight());
         System.out.println("X :" + x + " Y: " + y);
         if(selectedProp != null){
-            selectedProp = generateProp(selectedProp.getID(), x, y);
-            assert selectedProp != null;
-            floor.addProp(selectedProp);
+            Prop prop = generateProp(selectedProp, x, y);
+            assert prop != null;
+            floor.addProp(prop);
             System.out.println(selectedProp);
         } else {
             System.out.println("Please select a prop using the controls");
@@ -298,28 +310,30 @@ public class Main extends Application {
     private void handleEditor(KeyEvent e){
         switch (e.getCode()){
             case A -> {
-                selectedProp = Prop.clone(Prop.WALL, floor);
+                selectedProp = ID.Wall;
             }
             case B -> {
-                selectedProp = Prop.clone(Prop.PERSON, floor);
-                BasicPerson test = (BasicPerson) selectedProp;
+                selectedProp = ID.Person;
             }
             case C -> {
                 if(player != null){
-                    selectedProp = player; //Make sure player is initialized before you do this.
+                    selectedProp = ID.Player; //Make sure player is initialized before you do this.
                     System.out.println("Make sure you only put one player down, or else the program will break");
                 } else System.out.println("Make sure you initialize Player before you select him in the editor");
 
+            }
+            case D -> {
+                selectedProp = ID.Spike;
             }
             case ENTER -> {
                 System.out.println("Name your level: ");
                 Scanner input = new Scanner(System.in);
                 String name = input.next();
-                saveLevel(new File(name));
+                saveGame(new File(name));
             }
         }
         if(selectedProp != null && e.getCode() != KeyCode.ENTER){
-            System.out.println("You have selected a " + selectedProp.getID());
+            System.out.println("You have selected a " + selectedProp);
         }
     }
 
@@ -332,6 +346,8 @@ public class Main extends Application {
                     return new Wall(x, y, floor);
                 case Person:
                     return new BasicPerson(x, y, 50, 50, floor);
+                case Spike:
+                    return new Spike(x, y, floor);
             }
         } else System.out.println("The X value of " + x + " or the Y value of " + y + " may be out of bounds");
         System.out.println("The ID you have selected is not a valid ID");
@@ -443,7 +459,7 @@ public class Main extends Application {
     }
     private void handleGameOver(MouseEvent e){
         if(e.getButton() == MouseButton.PRIMARY) {
-            loadGame();
+            loadGame(saveFile);
             generateSidebar();
             gameStateManager.setCurGameState(GameStateManager.GameState.GAME);
         }
@@ -464,7 +480,7 @@ public class Main extends Application {
     private void handleMovement(KeyEvent e) {
         switch (e.getCode()) {
             case W -> {
-                if (player.getStatus() == Player.Status.Default) player.moveUp();
+                if (player.getStatus() == Player.Status.Default && !player.animating) player.moveUp();
                 else if (player.getStatus() == Player.Status.Looking) {
                     if (floor.props[player.getPosX()][player.getPosY() - 1] == null) print("It's Empty");
                      else {
@@ -477,7 +493,7 @@ public class Main extends Application {
 //                rect.setLayoutY(player.getPosY()*scale);
             }
             case A -> {
-                if (player.getStatus() == Player.Status.Default) player.moveLeft();
+                if (player.getStatus() == Player.Status.Default && !player.animating) player.moveLeft();
                 else if (player.getStatus() == Player.Status.Looking) {
                     if (floor.props[player.getPosX()-1][player.getPosY()] == null) print("It's Empty");
                     else {
@@ -490,7 +506,7 @@ public class Main extends Application {
 //                rect.setLayoutX(player.getPosX()*scale);
             }
             case S -> {
-                if (player.getStatus() == Player.Status.Default) player.moveDown();
+                if (player.getStatus() == Player.Status.Default && !player.animating) player.moveDown();
                 else if (player.getStatus() == Player.Status.Looking) {
                     if (floor.props[player.getPosX()][player.getPosY() + 1] == null) print("It's Empty");
                     else {
@@ -503,7 +519,7 @@ public class Main extends Application {
 //                rect.setLayoutY(player.getPosY()*scale);
             }
             case D -> {
-                if (player.getStatus() == Player.Status.Default) player.moveRight();
+                if (player.getStatus() == Player.Status.Default && !player.animating) player.moveRight();
                 else if (player.getStatus() == Player.Status.Looking) {
                     if (floor.props[player.getPosX()+1][player.getPosY()] == null) print("It's Empty");
                     else {
@@ -516,11 +532,10 @@ public class Main extends Application {
 //                rect.setLayoutX(player.getPosX()*scale);
             }
             case SPACE -> {
-//                for(int i = 0; i < floor.props[0].length; i++){
-//                    System.out.println(Arrays.toString(floor.props[i]));
-//                }
-                print("Select a direction");
-                player.setStatus(Player.Status.Looking);
+                if (player.getStatus() == Player.Status.Default && !player.animating) {
+                    print("Select a direction");
+                    player.setStatus(Player.Status.Looking);
+                }
 
             }
             case E -> {
@@ -533,10 +548,10 @@ public class Main extends Application {
                 System.out.println("You are now in the editor. Please refer to the editor guide for how to make a new floor.");
             }
             case ENTER -> {
-               saveGame();
+                if (player.getStatus() == Player.Status.Default && !player.animating) saveGame(saveFile);
             }
             case L -> {
-                loadGame();
+                if (player.getStatus() == Player.Status.Default && !player.animating) loadGame(saveFile);
             }
             case T -> {
                 gameStateManager.setCurGameState(GameStateManager.GameState.GAMEOVER);
@@ -591,39 +606,6 @@ public class Main extends Application {
             e.printStackTrace();
             return null;
         }
-    }
-
-    public void saveLevel(File file) {
-//        int[] walls = new int[floor.wallCnt * 2];
-//        int b = 0;
-//        int[] people = new int[floor.personCnt * 2];
-//        int en = 0;
-//        for(Prop[] propRay: floor.props) {
-//            for (Prop prop : propRay) {
-//                if (prop.getID() == ID.Wall) {
-//                    walls[b] = prop.getPosX();
-//                    walls[b + 1] = prop.getPosY();
-//                    b += 2;
-//                } else if (prop.getID() == ID.Person) {
-//                    people[en] = prop.getPosX();
-//                    people[en + 1] = prop.getPosY();
-//                    en += 2;
-//                }
-//            }
-//        }
-//        LevelBuilder lvl = new LevelBuilder(
-//                name + ".fun", walls, people,
-//                //player spawn
-//                new int[]{1, 1}
-//        );
-//
-//        try{
-//            SaveManager.save(lvl, lvl.name);
-//        }
-//        catch (Exception e){
-//            System.out.println("Couldn't save: "+ e.getMessage());
-//        }
-
     }
 
     public Scene getGame() {

@@ -27,7 +27,6 @@ public class Floor extends Group implements Serializable {
     public ImageView[][] propImageViews = new ImageView[width][height];
     private final boolean debug = false;
     public int fillTile;
-    public int wallCnt = 0;
     public int personCnt = 0;
     private ArrayList<Prop> toRemove;
     private TranslateTransition transition;
@@ -35,7 +34,7 @@ public class Floor extends Group implements Serializable {
         System.out.println(props.length);
         fillTile = FLOOR_SRC;
         this.transition = new TranslateTransition();
-        transition.setDuration(new Duration(1000));
+        transition.setDuration(new Duration(300));
         transition.setAutoReverse(false);
         transition.setCycleCount(1);
 
@@ -57,22 +56,23 @@ public class Floor extends Group implements Serializable {
         }
         toRemove = new ArrayList<>();
     }
+
+    public void setTransitionDirection(int x, int y){
+        transition.setByX(scale * x);
+        transition.setByY(scale * y);
+    }
+
     public void addProp(Prop prop){
         props[prop.getPosX()][prop.getPosY()] = prop;
         setImage(prop.getPosX(),prop.getPosY(), prop.getImageID());
-        if(prop.getID().equals(ID.Wall)) wallCnt++;
-        else if(prop.getID().equals(ID.Person)) personCnt++;
-//        update();
+        update();
     }
-//    public void setPropXYSwitch(int x1, int y1, int x2, int y2){
-//        props[x1][y1].setXY(x2,y2); //player.setXY(x2,y2)
-//        props[x2][y2] = props[x1][y1]; //player is put into
-//        props[x2][y2].setXY(x1,y1);
-//        update();
-//    }
+
     public void removeProp(Prop prop){
         toRemove.add(prop);
     }
+
+    //Important note: This function is not required to be 2 props next to each other, they can be diagonal, across the map, whatever.
     public void setPropSwitch(Prop prop1, Prop prop2){
         System.out.println("Switching " + prop1 + " and " + prop2);
         int prop1X = prop1.getPosX();
@@ -85,14 +85,27 @@ public class Floor extends Group implements Serializable {
         props[prop1X][prop1Y] = prop2;
         update();
     }
+
     public void playAnimation(TranslateTransition transition, int x, int y){
         if(propImageViews[x][y] != null){
+            if(debug) System.out.println("Playing animation");
+            setImageViewOnTop(x,y);
             transition.setNode(propImageViews[x][y]);
+            props[x][y].animating = true;
             transition.play();
         } else {
             System.out.println("The ImageView the animation is applied to is null");
         }
 
+    }
+    //Because layer is decided by order of instantiation, to set the image on top, just remake the imageview.
+    public void setImageViewOnTop(int x, int y){
+        getChildren().remove(propImageViews[x][y]);
+        propImageViews[x][y] = new ImageView(new Image(genImages(props[x][y].getImageID())));
+        propImageViews[x][y].setLayoutX(x * scale);
+        propImageViews[x][y].setLayoutY(y * scale);
+        propImageViews[x][y].setTranslateZ(2);
+        getChildren().add(propImageViews[x][y]);
     }
     public void clear(){
         props = new Prop[WIDTH/scale][HEIGHT/scale];
@@ -132,17 +145,34 @@ public class Floor extends Group implements Serializable {
         }
     }
     public Prop moveUp(Prop prop){
-        if(prop.getPosY() > 0){
-            if(props[prop.getPosX()][prop.getPosY()-1] == null){ //If the space im moving into is empty
-                props[prop.getPosX()][prop.getPosY()-1] = prop;
-                props[prop.getPosX()][prop.getPosY()] = null;
-                prop.setPosY(prop.getPosY()-1);
+        if(prop.getPosY() != 0 && !prop.animating){ //here
+            TranslateTransition transition = getUpTransition(); //here
+            if(props[prop.getPosX()][prop.getPosY()-1] == null){ //here
+
+                transition.setOnFinished(e -> {
+                    ImageView imageView = propImageViews[prop.getPosX()][prop.getPosY()];
+                    imageView.setLayoutY(imageView.getLayoutY()+scale); //here
+                    //Actual engine movement
+                    props[prop.getPosX()][prop.getPosY()-1] = prop; //here
+                    props[prop.getPosX()][prop.getPosY()] = null;
+                    prop.setPosY(prop.getPosY()-1); //here
+                    prop.animating = false;
+                    update();
+                });
+                playAnimation(transition, prop.getPosX(), prop.getPosY());
             } else { //If the space im moving to has a prop in it
-                Prop moveTo = props[prop.getPosX()][prop.getPosY()-1];
+                Prop moveTo = props[prop.getPosX()][prop.getPosY()-1]; //here
                 if(moveTo.isPassable()){ //If it is passable
-                    setPropSwitch(prop, moveTo);
+                    transition.setOnFinished(e -> {
+                        ImageView imageView = propImageViews[prop.getPosX()][prop.getPosY()];
+                        imageView.setLayoutY(imageView.getLayoutY()+scale); //here
+                        prop.setPosY(prop.getPosY()-1); //here
+                        prop.animating = false;
+                    });
+                    playAnimation(transition, prop.getPosX(), prop.getPosY());
+                    moveDown(moveTo); //here
                 } else { //If it is not passable
-                    Main.print("You bumped into a " + props[prop.getPosX()][prop.getPosY() - 1].getID());
+                    Main.print("You bumped into a " + props[prop.getPosX()][prop.getPosY()-1].getID()); //here
                 }
                 update();
                 return moveTo;
@@ -152,17 +182,36 @@ public class Floor extends Group implements Serializable {
         return null;
     }
     public Prop moveDown(Prop prop){
-        if(prop.getPosY() < getHeight()){
-            if(props[prop.getPosX()][prop.getPosY()+1] == null){ //If the space im moving into is empty
-                props[prop.getPosX()][prop.getPosY()+1] = prop;
-                props[prop.getPosX()][prop.getPosY()] = null;
-                prop.setPosY(prop.getPosY()+1);
+        if(prop.getPosY() < getHeight() && !prop.animating){ //here
+            TranslateTransition transition = getDownTransition(); //here
+            if(props[prop.getPosX()][prop.getPosY()+1] == null){ //here
+
+                transition.setOnFinished(e -> {
+                    System.out.println("Down animation finished");
+                    ImageView imageView = propImageViews[prop.getPosX()][prop.getPosY()];
+                    imageView.setLayoutY(imageView.getLayoutY()-scale); //here
+                    //Actual engine movement
+                    props[prop.getPosX()][prop.getPosY()+1] = prop; //here
+                    props[prop.getPosX()][prop.getPosY()] = null;
+                    prop.setPosY(prop.getPosY()+1); //here
+                    prop.animating = false;
+                    update();
+                });
+                playAnimation(transition, prop.getPosX(), prop.getPosY());
             } else { //If the space im moving to has a prop in it
-                Prop moveTo = props[prop.getPosX()][prop.getPosY()+1];
+                System.out.println("Yes");
+                Prop moveTo = props[prop.getPosX()][prop.getPosY()+1]; //here
                 if(moveTo.isPassable()){ //If it is passable
-                    setPropSwitch(prop, moveTo);
+                    transition.setOnFinished(e -> {
+                        ImageView imageView = propImageViews[prop.getPosX()][prop.getPosY()];
+                        imageView.setLayoutY(imageView.getLayoutY()-scale); //here
+                        prop.setPosY(prop.getPosY()+1); //here
+                        prop.animating = false;
+                    });
+                    playAnimation(transition, prop.getPosX(), prop.getPosY());
+                    moveUp(moveTo); //here
                 } else { //If it is not passable
-                    Main.print("You bumped into a " + props[prop.getPosX()][prop.getPosY() + 1].getID());
+                    Main.print("You bumped into a " + props[prop.getPosX()][prop.getPosY()+1].getID()); //here
                 }
                 update();
                 return moveTo;
@@ -172,18 +221,35 @@ public class Floor extends Group implements Serializable {
         return null;
     }
 
+
     public Prop moveLeft(Prop prop){
-        if(prop.getPosX() > 0){
-            if(props[prop.getPosX()][prop.getPosX()-1] == null){ //If the space im moving into is empty
-                props[prop.getPosX()][prop.getPosX()-1] = prop;
-                props[prop.getPosX()][prop.getPosX()] = null;
-                prop.setPosY(prop.getPosX()-1);
+        if(prop.getPosX() != 0 && !prop.animating){ //here
+            TranslateTransition transition = getLeftTransition(); //here
+            if(props[prop.getPosX()-1][prop.getPosY()] == null){ //here
+                transition.setOnFinished(e -> {
+                    ImageView imageView = propImageViews[prop.getPosX()][prop.getPosY()];
+                    imageView.setLayoutX(imageView.getLayoutX()+scale); //here
+                    //Actual engine movement
+                    props[prop.getPosX()-1][prop.getPosY()] = prop; //here
+                    props[prop.getPosX()][prop.getPosY()] = null;
+                    prop.setPosX(prop.getPosX()-1); //here
+                    prop.animating = false;
+                    update();
+                });
+                playAnimation(transition, prop.getPosX(), prop.getPosY());
             } else { //If the space im moving to has a prop in it
-                Prop moveTo = props[prop.getPosX()][prop.getPosX()-1];
+                Prop moveTo = props[prop.getPosX()-1][prop.getPosY()];
                 if(moveTo.isPassable()){ //If it is passable
-                    setPropSwitch(prop, moveTo);
+                    transition.setOnFinished(e -> {
+                        ImageView imageView = propImageViews[prop.getPosX()][prop.getPosY()];
+                        imageView.setLayoutX(imageView.getLayoutX()-scale);
+                        prop.setPosX(prop.getPosX()-1);
+                        prop.animating = false;
+                    });
+                    playAnimation(transition, prop.getPosX(), prop.getPosY());
+                    moveRight(moveTo);
                 } else { //If it is not passable
-                    Main.print("You bumped into a " + props[prop.getPosX()][prop.getPosX() - 1].getID());
+                    Main.print("You bumped into a " + props[prop.getPosX()-1][prop.getPosY()].getID());
                 }
                 update();
                 return moveTo;
@@ -193,17 +259,33 @@ public class Floor extends Group implements Serializable {
         return null;
     }
     public Prop moveRight(Prop prop){
-        if(prop.getPosX() < getWidth()){
-            if(props[prop.getPosX()][prop.getPosX()+1] == null){ //If the space im moving into is empty
-                props[prop.getPosX()][prop.getPosX()+1] = prop;
-                props[prop.getPosX()][prop.getPosX()] = null;
-                prop.setPosY(prop.getPosX()+1);
+        if(prop.getPosX() < getWidth() && !prop.animating){ //If the prop is not at the right edge of the screen
+            TranslateTransition transition = getRightTransition();
+            if(props[prop.getPosX()+1][prop.getPosY()] == null){ //If the space im moving into is empty
+                transition.setOnFinished(e -> {
+                    ImageView imageView = propImageViews[prop.getPosX()][prop.getPosY()];
+                    imageView.setLayoutX(imageView.getLayoutX()-scale);
+                    //Actual engine movement
+                    props[prop.getPosX()+1][prop.getPosY()] = prop;
+                    props[prop.getPosX()][prop.getPosY()] = null;
+                    prop.setPosX(prop.getPosX()+1);
+                    prop.animating = false;
+                    update();
+                });
+                playAnimation(transition, prop.getPosX(), prop.getPosY());
             } else { //If the space im moving to has a prop in it
-                Prop moveTo = props[prop.getPosX()][prop.getPosX()+1];
+                Prop moveTo = props[prop.getPosX()+1][prop.getPosY()];
                 if(moveTo.isPassable()){ //If it is passable
-                    setPropSwitch(prop, moveTo);
+                    transition.setOnFinished(e -> {
+                        ImageView imageView = propImageViews[prop.getPosX()][prop.getPosY()];
+                        imageView.setLayoutX(imageView.getLayoutX()-scale);
+                        prop.setPosX(prop.getPosX()+1);
+                        prop.animating = false;
+                    });
+                    playAnimation(transition, prop.getPosX(), prop.getPosY());
+                    moveLeft(moveTo);
                 } else { //If it is not passable
-                    Main.print("You bumped into a " + props[prop.getPosX()][prop.getPosX() +1].getID());
+                    Main.print("You bumped into a " + props[prop.getPosX()+1][prop.getPosY()].getID());
                 }
                 update();
                 return moveTo;
@@ -212,7 +294,30 @@ public class Floor extends Group implements Serializable {
         update();
         return null;
     }
-
+    public TranslateTransition getUpTransition() {
+        TranslateTransition transition = new TranslateTransition();
+        transition.setDuration(new Duration(300));
+        transition.setByY(-Main.scale);
+        return transition;
+    }
+    public TranslateTransition getDownTransition() {
+        TranslateTransition transition = new TranslateTransition();
+        transition.setDuration(new Duration(300));
+        transition.setByY(Main.scale);
+        return transition;
+    }
+    public TranslateTransition getLeftTransition() {
+        TranslateTransition transition = new TranslateTransition();
+        transition.setDuration(new Duration(300));
+        transition.setByX(-Main.scale);
+        return transition;
+    }
+    public TranslateTransition getRightTransition() {
+        TranslateTransition transition = new TranslateTransition();
+        transition.setDuration(new Duration(300));
+        transition.setByX(Main.scale);
+        return transition;
+    }
     public void setImage(int x, int y, int imageID){
         propImageViews[x][y].setImage(new Image(Main.genImages(imageID)));
     }
@@ -258,7 +363,7 @@ public class Floor extends Group implements Serializable {
                 Prop prop = props[i][j];
                 if (prop != null) {
                     propImageViews[i][j].setImage(new Image(Objects.requireNonNull(genImages(prop.getImageID()))));
-                    if(debug) System.out.print(prop);
+                    if(debug) System.out.print("at Array x: " + i + "y: " + j + prop);
                 } else {
                     propImageViews[i][j].setImage(null);
                 }

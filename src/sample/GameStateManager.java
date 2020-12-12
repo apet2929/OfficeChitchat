@@ -36,13 +36,11 @@ public class GameStateManager {
             case MAINMENU -> {
                 primaryStage.setScene(menu);
             }
-            case GAME -> {
-                primaryStage.setScene(game);
-            }
-            case EDITOR -> {
+            case GAME, EDITOR -> {
                 primaryStage.setScene(game);
             }
             case GAMEOVER -> {
+                Main.output.clear();
                 primaryStage.setScene(gameOver);
             }
         }

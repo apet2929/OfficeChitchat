@@ -17,7 +17,10 @@ public class Prop implements Serializable {
 //    public static Prop FLOOR = new Prop(ID.Empty, true, 0, 0, 50, 50, "There's nothing there.", 0);
     public static Prop PERSON = new BasicPerson( 0,0,50,50, null);
     public static Prop WALL = new Wall(0,0, null);
+    public static Prop SPIKE = new Spike(0,0,null);
     private int imageID;
+    public boolean animating;
+    public Floor floor;
     //    private Image sprite;
 
     public int width, height;
@@ -34,8 +37,9 @@ public class Prop implements Serializable {
         if(floor != null){
             floor.setImage(x,y,imageID);
             floor.addProp(this);
+            this.floor = floor;
         }
-
+        animating = false;
     }
 
 
@@ -62,7 +66,11 @@ public class Prop implements Serializable {
         this.x = x;
         this.y = y;
     }
-
+    public void setFloor(Floor floor){
+        this.floor = floor;
+        floor.addProp(this);
+        floor.setImage(getPosX(), getPosY(), imageID);
+    }
     public int getImageID() {
         return imageID;
     }
