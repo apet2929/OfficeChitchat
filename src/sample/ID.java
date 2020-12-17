@@ -6,6 +6,7 @@ public enum ID {
     Person(),
     Empty(),
     Spike(),
-
-
+    Fan(),
+    FloorUp(),
+    FloorDown()
 }

@@ -14,10 +14,6 @@ public class Prop implements Serializable {
     private ID id;
     private boolean passable;
     private String description;
-//    public static Prop FLOOR = new Prop(ID.Empty, true, 0, 0, 50, 50, "There's nothing there.", 0);
-    public static Prop PERSON = new BasicPerson( 0,0,50,50, null);
-    public static Prop WALL = new Wall(0,0, null);
-    public static Prop SPIKE = new Spike(0,0,null);
     private int imageID;
     public boolean animating;
     public Floor floor;
@@ -108,7 +104,7 @@ public class Prop implements Serializable {
 //        return new Prop(ID.Empty, true, x,y, 50, 50, "There's nothing there.", 0);
 //    }
 
-
+    public void tick(Floor floor){}
     @Override
     public String toString() {
         return "Prop{" +

@@ -9,6 +9,7 @@ public class GameStateManager {
     private Scene game;
     private Scene menu;
     private Scene gameOver;
+    private Main main;
     public enum GameState{
         MAINMENU,
         GAME,
@@ -18,11 +19,16 @@ public class GameStateManager {
         GAMEOVER,
         BATTLE
     }
-    public GameStateManager(Stage primaryStage, Scene game, Scene menu, Scene gameOver){
+    public GameStateManager(Stage primaryStage, Scene game, Scene menu, Scene gameOver, Main main){
         this.primaryStage = primaryStage;
         this.game = game;
         this.menu = menu;
         this.gameOver = gameOver;
+        this.main = main;
+    }
+
+    public void setFloor(int lvl){
+//        main.setFloor(lvl);
     }
 
     public GameState getCurGameState() {

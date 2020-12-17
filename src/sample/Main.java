@@ -1,12 +1,10 @@
 package sample;
 
-import javafx.animation.TranslateTransition;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.TextArea;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -17,26 +15,31 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
-import javafx.util.Duration;
 
 import java.io.*;
-import java.util.Arrays;
-import java.util.Scanner;
+import java.util.*;
+
+import static sample.Floor.UP_DIRECTION;
 
 
 public class Main extends Application {
     public static final int WIDTH = 1300;
     public static final int HEIGHT = 1000;
-//    private Rectangle rect;
-    private Floor floor;
     public static final int scale = 50;
+
+    //Floors
+    private static ArrayList<Floor> floors;
+    private Floor floor;
+    public static int lvl = 0;
+
+    //Game
     private Player player;
-    private GameStateManager gameStateManager;
+    private static GameStateManager gameStateManager;
     private Scene game;
+    private Group gameRoot;
     private Scene menu;
     private Scene cutscene;
     private Scene gameOver;
-    //Sidebar
     public static TextArea output = new TextArea();
 
     //Cutscenes
@@ -49,12 +52,13 @@ public class Main extends Application {
     //Editor
     private ID selectedProp;
 
-    //Sprite sources
-
+    //Debug
+    public static final boolean debug = true;
 
     //Loading level
     private LevelBuilder levelBuilder;
     private File saveFile;
+
     @Override
     public void start(Stage primaryStage) throws Exception{
         //Creating groups and scenes, setup
@@ -66,14 +70,14 @@ public class Main extends Application {
         menu = new Scene(menuRoot, WIDTH, HEIGHT);
         cutscene = new Scene(cutsceneRoot, WIDTH, HEIGHT);
         gameOver = new Scene(gameOverRoot, WIDTH, HEIGHT);
-        floor = new Floor();
+        floor = new Floor(0);
 
         //Setting gamestate
-        gameStateManager = new GameStateManager(primaryStage, game,menu, gameOver);
+        gameStateManager = new GameStateManager(primaryStage, game,menu, gameOver, this);
         gameStateManager.setCurGameState(GameStateManager.GameState.MAINMENU);
 
         //Setting up save file
-        saveFile = new File("floor1.fun");
+        saveFile = new File("save.fun");
         //Generating Layouts
         generateMainMenu(menuRoot);
         generateGameOver(gameOverRoot);
@@ -107,38 +111,17 @@ public class Main extends Application {
         primaryStage.show();
     }
 
-//    public void test(Stage primaryStage){
-//        Group test = new Group();
-//        Scene scene = new Scene(test, WIDTH, HEIGHT);
-//        Rectangle rect = new Rectangle(200,50,100,100);
-//        TranslateTransition translateTransition = new TranslateTransition();
-//        translateTransition.setNode(rect);
-//        translateTransition.setByX(500);
-//        translateTransition.setCycleCount(1);
-//        translateTransition.setDuration(new Duration(5000));
-//        translateTransition.setAutoReverse(false);
-//
-//        translateTransition.play();
-//        test.getChildren().add(rect);
-//        primaryStage.setScene(scene);
-//    }
-    public void generateGame(){
+    public static void preLoadFloor(int lvl){
+        floors.add(lvl, getFloor(lvl));
+    }
 
-//        player = new Player(1, 12, this.floor, Player.Status.Default, gameStateManager);
-//        floor.clear();
-//        output.clear();
-//        floor.addProp(player);
-//        floor.addProp(new BasicPerson( 10,10,scale,scale, floor));
-//        Wall wall = new Wall( 5,5, floor);
-//        floor.addProp(wall);
-//        Spike spike = new Spike(2,2, scale, scale, SPIKE_SRC, floor);
-//        floor.update();
+    public void generateGame(){
         loadGame(saveFile);
     }
 
-    public void loadGame(File file){
+    public void loadGame(File file){ //1st is player, 2nd is lvl, 3rd is number of props
         try {
-            System.out.println("Loading");
+            System.out.println("Loading " + file.getName());
             FileInputStream fileStream = new FileInputStream(file);
             ObjectInputStream objectStream = new ObjectInputStream(fileStream);
 
@@ -149,6 +132,7 @@ public class Main extends Application {
             player.floor = floor;
             player.gameStateManager = gameStateManager;
             floor.addProp(player);
+            floor.lvl = (Integer)objectStream.readObject();
             floor.setImage(player.getPosX(), player.getPosY(), player.getImageID());
 
             //Loading all other props
@@ -156,26 +140,15 @@ public class Main extends Application {
             System.out.println("Number of props to be loaded: " + numProps);
             for (int i = 0; i < numProps; i++) {
                 Prop temp = (Prop) (objectStream.readObject()); //We need to do this because we cannot serialize floors. Maybe fix this later?
-//                if (temp.getID() == ID.Person) {
-//                    BasicPerson person = new BasicPerson(temp.getPosX(), temp.getPosY(), temp.width, temp.height, this.floor);
-//                    floor.addProp(person);
-//                } else if (temp.getID() == ID.Wall) {
-//                    Wall wall = new Wall(temp.getPosX(), temp.getPosY(), floor);
-//                    floor.addProp(wall);
-//                } else if(temp.getID() == ID.Spike){
-//                    Spike spike = new Spike(temp.getPosX(), temp.getPosY(), floor);
-//                    floor.addProp(spike);
-//                }
-                System.out.println(temp);
+                System.out.print(temp);
                 temp.setFloor(floor);
             }
 
             objectStream.close();
             fileStream.close();
 
-//                    floor.update();
         }
-        catch (IOException | ClassNotFoundException exception) {
+        catch (IOException | ClassNotFoundException | ClassCastException exception) {
             System.out.println("Failed to load state");
             exception.printStackTrace();
             player = new Player(1, 12, this.floor, Player.Status.Default, gameStateManager);
@@ -187,7 +160,12 @@ public class Main extends Application {
             floor.update();
         }
     }
-    public void saveGame(File file){
+
+    public void saveGame(int lvl){
+        saveGame(new File("floor" + lvl + ".fun"));
+    }
+
+    public void saveGame(File file){ //1st is player, 2nd is lvl, 3rd is number of props,
         try {
             System.out.println("Saving");
             file.createNewFile();
@@ -196,6 +174,7 @@ public class Main extends Application {
             player.floor = null;
             player.gameStateManager = null;
             oos.writeObject(player);
+            oos.writeObject(floor.lvl);
             Integer numProps = -1;
             for(Prop[] props : floor.props) {
                 for (Prop prop : props) {
@@ -204,10 +183,12 @@ public class Main extends Application {
                     }
                 }
             }
+            System.out.println("Number of props saved: " + numProps);
             oos.writeObject(numProps);
+
             for(Prop[] props : floor.props) {
                 for (Prop prop : props) {
-                    if (prop != null) {
+                    if (prop != null && prop.getID() != ID.Player) {
                         prop.floor = null;
                         oos.writeObject(prop);
                     }
@@ -217,7 +198,7 @@ public class Main extends Application {
             fos.close();
             gameStateManager.setCurGameState(GameStateManager.GameState.GAME);
             player.floor = this.floor;
-            player.gameStateManager = this.gameStateManager;
+            player.gameStateManager = gameStateManager;
 
         }
         catch (IOException i){
@@ -295,8 +276,8 @@ public class Main extends Application {
     } //Keyboard Input
 
     private void handleEditor(MouseEvent e) {
-        int x = (int) ((e.getX()/(WIDTH-300))*floor.getWidth());
-        int y = (int) ((e.getY()/HEIGHT)*floor.getHeight());
+        int x = (int) ((e.getX()/(WIDTH-300))* floor.getWidth());
+        int y = (int) ((e.getY()/HEIGHT)* floor.getHeight());
         System.out.println("X :" + x + " Y: " + y);
         if(selectedProp != null){
             Prop prop = generateProp(selectedProp, x, y);
@@ -325,13 +306,18 @@ public class Main extends Application {
             case D -> {
                 selectedProp = ID.Spike;
             }
+            case E -> {
+                selectedProp = ID.Fan;
+            }
+
             case ENTER -> {
-                System.out.println("Name your level: ");
+                System.out.println("What floor is your level on?");
                 Scanner input = new Scanner(System.in);
-                String name = input.next();
-                saveGame(new File(name));
+                int name = input.nextInt();
+                saveGame(name);
             }
         }
+
         if(selectedProp != null && e.getCode() != KeyCode.ENTER){
             System.out.println("You have selected a " + selectedProp);
         }
@@ -348,6 +334,8 @@ public class Main extends Application {
                     return new BasicPerson(x, y, 50, 50, floor);
                 case Spike:
                     return new Spike(x, y, floor);
+                case Fan:
+                    return new Fan(x,y, floor, UP_DIRECTION);
             }
         } else System.out.println("The X value of " + x + " or the Y value of " + y + " may be out of bounds");
         System.out.println("The ID you have selected is not a valid ID");
@@ -465,17 +453,74 @@ public class Main extends Application {
         }
     }
 
-//    public static Cutscene getCutscene(int curCutscene) {
-//        if(curCutscene <= NUMCUTSCENES) {
-//            switch (curCutscene) {
-//                case 0: return new Cutscene(null,null,null);
-//            }
-//        } else{
-//            System.out.println("Cutscene number " + curCutscene + " is out of bounds of range " + NUMCUTSCENES);
-//            return null;
-//        }
-//        return null;
-//    }
+    public static Cutscene getCutscene(int curCutscene) {
+        if(curCutscene <= NUMCUTSCENES) {
+            switch (curCutscene) {
+                case 0: return new Cutscene(null,null,null);
+            }
+        } else{
+            System.out.println("Cutscene number " + curCutscene + " is out of bounds of range " + NUMCUTSCENES);
+            return null;
+        }
+        return null;
+    }
+
+    public void setFloor(int lvl){
+        if(floors.get(lvl) != null) {
+            floor = floors.get(lvl);
+        } else {
+            floor = getFloor(lvl);
+        }
+        Main.lvl = lvl;
+        this.player = floor.getPlayer();
+
+    }
+
+    public void setFloor(Floor floor){
+
+        this.floor = floor;
+        Main.lvl = floor.lvl;
+        this.player = floor.getPlayer();
+        this.floor.update();
+    }
+
+    public static Floor getFloor(int lvl){
+        return getFloor(new File("floor" + lvl + ".fun"));
+    }
+
+    public static Floor getFloor(File file){
+        try {
+            System.out.println("Loading " + file.getName());
+            FileInputStream fileStream = new FileInputStream(file);
+            ObjectInputStream objectStream = new ObjectInputStream(fileStream);
+
+            //Loading Player
+
+            Player player = (Player) objectStream.readObject();
+            Floor floor = new Floor((Integer)(objectStream.readObject()));
+            player.setFloor(floor);
+            player.gameStateManager = gameStateManager;
+
+            //Loading all other props
+            Integer numProps = (Integer) (objectStream.readObject());
+            System.out.println("Number of props to be loaded: " + numProps);
+            for (int i = 0; i < numProps; i++) {
+                Prop temp = (Prop) (objectStream.readObject()); //We need to do this because we cannot serialize floors. Maybe fix this later?
+                System.out.println(temp);
+                temp.setFloor(floor);
+            }
+
+            objectStream.close();
+            fileStream.close();
+            return floor;
+//                    floor.update();
+        }
+        catch (IOException | ClassNotFoundException exception) {
+            System.out.println("File " + file.getName() + " not found.");
+            exception.printStackTrace();
+            return null;
+        }
+    }
 
     private void handleMovement(KeyEvent e) {
         switch (e.getCode()) {
@@ -554,7 +599,7 @@ public class Main extends Application {
                 if (player.getStatus() == Player.Status.Default && !player.animating) loadGame(saveFile);
             }
             case T -> {
-                gameStateManager.setCurGameState(GameStateManager.GameState.GAMEOVER);
+                floor.bufferAction(new BufferedAction(player, UP_DIRECTION));
             }
 
             default -> System.out.println("default");
