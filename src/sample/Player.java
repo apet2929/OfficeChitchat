@@ -1,6 +1,12 @@
 package sample;
 
 
+import javafx.scene.image.Image;
+
+import java.util.Locale;
+
+import static sample.Floor.UP_DIRECTION;
+
 public class Player extends BasicPerson {
     public enum Status {
         Default,
@@ -46,12 +52,10 @@ public class Player extends BasicPerson {
         this.setImageID(Main.PLAYER_UP_SRC);
         Prop prop = floor.getProp(getPosX(), getPosY()-1);
         floor.moveUp(this);
-        if(prop != null) {
-            if (prop.getID() == ID.Spike) die();
-            if(prop.getID() == ID.FloorUp) System.out.println("yes");
-        }
+        if(prop != null) handleCollision(prop);
         floor.tick();
         floor.update();
+        floor.propImageViews[getPosX()][getPosY()].setImage(new Image(Main.genImages(Main.PLAYER_UP_SRC)));
     }
     public void moveLeft(){
         this.setImageID(Main.PLAYER_LEFT_SRC);
@@ -73,11 +77,8 @@ public class Player extends BasicPerson {
         floor.moveRight(this);
         if(prop != null) {
             if (prop.getID() == ID.Spike) die();
-            else if (prop.getID() == ID.FloorUp){
+            else if (prop.getID() == ID.FloorUp) {
                 Main.print("yes");
-                gameStateManager.setFloor(Main.lvl + 1);
-            } else if (prop.getID() == ID.FloorDown) {
-                gameStateManager.setFloor(Main.lvl - 1);
             }
         }
         floor.tick();
@@ -88,9 +89,15 @@ public class Player extends BasicPerson {
         gameStateManager.setCurGameState(GameStateManager.GameState.GAMEOVER);
     }
 
-
-
-
-
+    private void handleCollision(Prop prop){
+        Main.print("You bumped into a " + prop.getID().toString().toLowerCase(Locale.ROOT));
+        if(prop.getID().equals(ID.Spike)){
+            die();
+        } else if(prop.getID().equals(ID.FloorUp)){
+            gameStateManager.goUp();
+        } else if(prop.getID().equals(ID.FloorDown)){
+            gameStateManager.goDown();
+        }
+    }
 
 }

@@ -1,7 +1,5 @@
 package sample;
 
-import javafx.animation.Animation;
-import javafx.animation.Transition;
 import javafx.animation.TranslateTransition;
 import javafx.scene.Group;
 import javafx.scene.image.Image;
@@ -9,14 +7,12 @@ import javafx.scene.image.ImageView;
 import javafx.util.Duration;
 
 import java.io.Serializable;
-import java.lang.reflect.Array;
-import java.lang.reflect.Type;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
 
 import static sample.Main.*;
-
 
 public class Floor extends Group implements Serializable {
 
@@ -26,8 +22,8 @@ public class Floor extends Group implements Serializable {
     public static final int DOWN_DIRECTION = 3;
 
     public int lvl;
-    private final int width = (Main.WIDTH-300)/Main.scale;
-    private final int height = Main.HEIGHT/Main.scale;
+    public final int width = (Main.WIDTH-300)/Main.scale;
+    public final int height = Main.HEIGHT/Main.scale;
     public Prop[][] props = new Prop[width][height];
     private final ImageView[][] floor = new ImageView[width][height];
     public ImageView[][] propImageViews = new ImageView[width][height];
@@ -37,9 +33,7 @@ public class Floor extends Group implements Serializable {
     private TranslateTransition transition;
     private ArrayList<BufferedAction> bufferedActions;
 
-
     public Floor(int lvl){
-        System.out.println(props.length);
         this.lvl = lvl;
         fillTile = FLOOR_SRC;
         this.transition = new TranslateTransition();
@@ -78,6 +72,7 @@ public class Floor extends Group implements Serializable {
         update();
     }
 
+
     public void removeProp(Prop prop){
         toRemove.add(prop);
     }
@@ -97,7 +92,7 @@ public class Floor extends Group implements Serializable {
     }
 
     public void playAnimation(TranslateTransition transition, int x, int y){
-        if(propImageViews[x][y] != null){
+        if(propImageViews[x][y].getImage() != null){
             if(debug) System.out.println("Playing animation");
             setImageViewOnTop(x,y);
             transition.setNode(propImageViews[x][y]);
@@ -108,6 +103,7 @@ public class Floor extends Group implements Serializable {
         }
 
     }
+
     //Because layer is decided by order of instantiation, to set the image on top, just remake the imageview.
     public void setImageViewOnTop(int x, int y){
         getChildren().remove(propImageViews[x][y]);
@@ -367,15 +363,18 @@ public class Floor extends Group implements Serializable {
         bufferedActions.add(action);
     }
 
-    private void resolveBufferedActions(){
-        for(BufferedAction bufferedAction : bufferedActions){
-            System.out.println("Resolving Buffered Action: " + bufferedAction);
-            if(!bufferedAction.resolved){
-                move(bufferedAction.prop, bufferedAction.direction);
-                bufferedAction.resolved = true;
+    private void resolveBufferedActions() {
+        if (bufferedActions.size() != 0) {
+            System.out.println("Number of buffered actions: " + bufferedActions.size());
+
+            for (BufferedAction bufferedAction : bufferedActions) {
+                System.out.println("Resolving Buffered Action: " + bufferedAction);
+                if (!bufferedAction.resolved) {
+                    bufferedAction.resolve();
+                }
             }
+            bufferedActions.clear();
         }
-        bufferedActions.clear();
     }
 
     public Player getPlayer(){
@@ -448,8 +447,9 @@ public class Floor extends Group implements Serializable {
             }
         }
     }
-    public void update(){ //May seperate this into tick and render methods.
-        System.out.println("Updating");
+
+    public void update(){ //May separate this into tick and render methods.
+        if(debug) System.out.println("Updating");
         for(Prop prop: toRemove){
             System.out.println("Removed " + prop);
             props[prop.getPosX()][prop.getPosY()] = null;
@@ -461,15 +461,15 @@ public class Floor extends Group implements Serializable {
             for (int j = 0; j < height; j++) {
                 Prop prop = props[i][j];
                 if (prop != null) {
-                    propImageViews[i][j].setImage(new Image(Objects.requireNonNull(genImages(prop.getImageID()))));
-//                    if(debug) System.out.print("at Array x: " + i + "y: " + j + prop);
+                    propImageViews[i][j].setImage(new Image(genImages(prop.getImageID())));
+                    if(debug) System.out.print("at Array x: " + i + "y: " + j + prop);
                 } else {
                     propImageViews[i][j].setImage(null);
                 }
             }
         }
-
     }
+
     @Override
     public String toString() {
         return "Floor{" +

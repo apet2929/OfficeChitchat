@@ -27,8 +27,11 @@ public class GameStateManager {
         this.main = main;
     }
 
-    public void setFloor(int lvl){
-//        main.setFloor(lvl);
+    public void goUp(){
+        main.goUp();
+    }
+    public void goDown(){
+        main.goDown();
     }
 
     public GameState getCurGameState() {
