@@ -196,15 +196,17 @@ public class Floor extends Group implements Serializable {
             } else { //If the space im moving to has a prop in it
                 Prop moveTo = props[prop.getPosX()][prop.getPosY()-1]; //here
                 if(moveTo.isPassable()){ //If it is passable
-                    transition.setOnFinished(e -> {
-                        ImageView imageView = propImageViews[prop.getPosX()][prop.getPosY()];
-                        imageView.setLayoutY(imageView.getLayoutY()+scale); //here
-                        prop.setPosY(prop.getPosY()-1); //here
-                        prop.animating = false;
-                        resolveBufferedActions();
-                    });
-                    playAnimation(transition, prop.getPosX(), prop.getPosY());
-                    moveDown(moveTo); //here
+                    switchPlaces(prop, moveTo);
+
+//                    transition.setOnFinished(e -> {
+//                        ImageView imageView = propImageViews[prop.getPosX()][prop.getPosY()];
+//                        imageView.setLayoutY(imageView.getLayoutY()+scale); //here
+//                        prop.setPosY(prop.getPosY()-1); //here
+//                        prop.animating = false;
+//                        resolveBufferedActions();
+//                    });
+//                    playAnimation(transition, prop.getPosX(), prop.getPosY());
+//                    moveDown(moveTo); //here
                 } else { //If it is not passable
                     Main.print("You bumped into a " + props[prop.getPosX()][prop.getPosY()-1].getID()); //here
                 }
@@ -236,18 +238,19 @@ public class Floor extends Group implements Serializable {
                 });
                 playAnimation(transition, prop.getPosX(), prop.getPosY());
             } else { //If the space im moving to has a prop in it
-                System.out.println("Yes");
+
                 Prop moveTo = props[prop.getPosX()][prop.getPosY()+1]; //here
                 if(moveTo.isPassable()){ //If it is passable
-                    transition.setOnFinished(e -> {
-                        ImageView imageView = propImageViews[prop.getPosX()][prop.getPosY()];
-                        imageView.setLayoutY(imageView.getLayoutY()-scale); //here
-                        prop.setPosY(prop.getPosY()+1); //here
-                        prop.animating = false;
-                        resolveBufferedActions();
-                    });
-                    playAnimation(transition, prop.getPosX(), prop.getPosY());
-                    moveUp(moveTo); //here
+                    switchPlaces(prop, moveTo);
+//                    transition.setOnFinished(e -> {
+//                        ImageView imageView = propImageViews[prop.getPosX()][prop.getPosY()];
+//                        imageView.setLayoutY(imageView.getLayoutY()-scale); //here
+//                        prop.setPosY(prop.getPosY()+1); //here
+//                        prop.animating = false;
+//                        resolveBufferedActions();
+//                    });
+//                    playAnimation(transition, prop.getPosX(), prop.getPosY());
+//                    moveUp(moveTo); //here
                 } else { //If it is not passable
                     Main.print("You bumped into a " + props[prop.getPosX()][prop.getPosY()+1].getID()); //here
                 }
@@ -281,15 +284,16 @@ public class Floor extends Group implements Serializable {
             } else { //If the space im moving to has a prop in it
                 Prop moveTo = props[prop.getPosX()-1][prop.getPosY()];
                 if(moveTo.isPassable()){ //If it is passable
-                    transition.setOnFinished(e -> {
-                        ImageView imageView = propImageViews[prop.getPosX()][prop.getPosY()];
-                        imageView.setLayoutX(imageView.getLayoutX()-scale);
-                        prop.setPosX(prop.getPosX()-1);
-                        prop.animating = false;
-                        resolveBufferedActions();
-                    });
-                    playAnimation(transition, prop.getPosX(), prop.getPosY());
-                    moveRight(moveTo);
+                    switchPlaces(prop, moveTo);
+//                    transition.setOnFinished(e -> {
+//                        ImageView imageView = propImageViews[prop.getPosX()][prop.getPosY()];
+//                        imageView.setLayoutX(imageView.getLayoutX()-scale);
+//                        prop.setPosX(prop.getPosX()-1);
+//                        prop.animating = false;
+//                        resolveBufferedActions();
+//                    });
+//                    playAnimation(transition, prop.getPosX(), prop.getPosY());
+//                    moveRight(moveTo);
                 } else { //If it is not passable
                     Main.print("You bumped into a " + props[prop.getPosX()-1][prop.getPosY()].getID());
                 }
@@ -322,15 +326,16 @@ public class Floor extends Group implements Serializable {
             } else { //If the space im moving to has a prop in it
                 Prop moveTo = props[prop.getPosX()+1][prop.getPosY()];
                 if(moveTo.isPassable()){ //If it is passable
-                    transition.setOnFinished(e -> {
-                        ImageView imageView = propImageViews[prop.getPosX()][prop.getPosY()];
-                        imageView.setLayoutX(imageView.getLayoutX()-scale);
-                        prop.setPosX(prop.getPosX()+1);
-                        prop.animating = false;
-                        resolveBufferedActions();
-                    });
-                    playAnimation(transition, prop.getPosX(), prop.getPosY());
-                    moveLeft(moveTo);
+                    switchPlaces(prop, moveTo);
+//                    transition.setOnFinished(e -> {
+//                        ImageView imageView = propImageViews[prop.getPosX()][prop.getPosY()];
+//                        imageView.setLayoutX(imageView.getLayoutX()-scale);
+//                        prop.setPosX(prop.getPosX()+1);
+//                        prop.animating = false;
+//                        resolveBufferedActions();
+//                    });
+//                    playAnimation(transition, prop.getPosX(), prop.getPosY());
+//                    moveLeft(moveTo);
                 } else { //If it is not passable
                     Main.print("You bumped into a " + props[prop.getPosX()+1][prop.getPosY()].getID());
                 }
@@ -417,15 +422,16 @@ public class Floor extends Group implements Serializable {
         propImageViews[x][y].setImage(new Image(Main.genImages(imageID)));
     }
 
-    public void switchPlaces(Prop prop1, Prop prop2){
-        int prop1X = prop1.getPosX();
-        int prop1Y = prop1.getPosY();
-        int prop2X = prop2.getPosX();
-        int prop2Y = prop2.getPosY();
-        props[prop1X][prop1Y] = prop2;
-        props[prop2X][prop2Y] = prop1;
-        prop2.setXY(prop1X, prop1Y);
-        prop1.setXY(prop2X, prop2Y);
+    public void switchPlaces(Prop prop, Prop moveTo){
+        int propX = prop.getPosX();
+        int propY = prop.getPosY();
+        int moveToX = moveTo.getPosX();
+        int moveToY = moveTo.getPosY();
+
+        props[propX][propY] = moveTo;
+        props[moveToX][moveToY] = prop;
+        prop.setXY(moveToX,moveToY);
+        moveTo.setXY(propX, propY);
 
     }
     public int getWidth() {
@@ -455,7 +461,6 @@ public class Floor extends Group implements Serializable {
             props[prop.getPosX()][prop.getPosY()] = null;
         }
         toRemove.clear();
-
 
         for(int i = 0; i < width; i++) {
             for (int j = 0; j < height; j++) {

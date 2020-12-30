@@ -58,6 +58,7 @@ public class Prop implements Serializable {
     public void setPassable(boolean passable) {
         this.passable = passable;
     }
+
     public void setXY(int x, int y){
         this.x = x;
         this.y = y;

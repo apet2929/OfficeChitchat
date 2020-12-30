@@ -13,11 +13,6 @@ public class Player extends BasicPerson {
         Looking
     };
 
-    public static final String UP_IMAGE = "player_up";
-    public static final String DOWN_IMAGE = "player_down";
-    public static final String LEFT_IMAGE = "player_left";
-    public static final String RIGHT_IMAGE = "player_right";
-
     private Status status;
     public GameStateManager gameStateManager;
     public Status getStatus() {
@@ -34,53 +29,41 @@ public class Player extends BasicPerson {
         this.setDescription( "It's you");
         this.status = status;
         this.gameStateManager = gameStateManager;
+        this.direction = Direction.Up;
     }
 
     public void moveDown(){
-        this.setImageID(Main.PLAYER_DOWN_SRC);
+        this.direction = Direction.Down;
         Prop prop = floor.getProp(getPosX(), getPosY()+1);
         floor.moveDown(this);
-        if(prop != null) {
-            if (prop.getID() == ID.Spike) die();
-            if(prop.getID() == ID.FloorUp) System.out.println("yes");
-        }
+        if(prop != null) handleCollision(prop);
         floor.tick();
         floor.update();
     }
 
     public void moveUp(){
-        this.setImageID(Main.PLAYER_UP_SRC);
+        this.direction = Direction.Up;
         Prop prop = floor.getProp(getPosX(), getPosY()-1);
         floor.moveUp(this);
         if(prop != null) handleCollision(prop);
         floor.tick();
         floor.update();
-        floor.propImageViews[getPosX()][getPosY()].setImage(new Image(Main.genImages(Main.PLAYER_UP_SRC)));
     }
+
     public void moveLeft(){
-        this.setImageID(Main.PLAYER_LEFT_SRC);
+        this.direction = Direction.Left;
         Prop prop = floor.getProp(getPosX()-1, getPosY());
         floor.moveLeft(this);
-        if(prop != null) {
-            if (prop.getID() == ID.Spike) die();
-            if(prop.getID() == ID.FloorUp){
-                System.out.println("yes");
-            }
-        };
+        if(prop != null) handleCollision(prop);
         floor.tick();
         floor.update();
     }
 
     public void moveRight() {
-        this.setImageID(Main.PLAYER_RIGHT_SRC);
+        this.direction = Direction.Right;
         Prop prop = floor.getProp(getPosX()+1, getPosY());
         floor.moveRight(this);
-        if(prop != null) {
-            if (prop.getID() == ID.Spike) die();
-            else if (prop.getID() == ID.FloorUp) {
-                Main.print("yes");
-            }
-        }
+        if(prop != null) handleCollision(prop);
         floor.tick();
         floor.update();
     }
@@ -90,7 +73,7 @@ public class Player extends BasicPerson {
     }
 
     private void handleCollision(Prop prop){
-        Main.print("You bumped into a " + prop.getID().toString().toLowerCase(Locale.ROOT));
+        if(!prop.isPassable()) Main.print("You bumped into a " + prop.getID().toString().toLowerCase(Locale.ROOT));
         if(prop.getID().equals(ID.Spike)){
             die();
         } else if(prop.getID().equals(ID.FloorUp)){
@@ -100,4 +83,14 @@ public class Player extends BasicPerson {
         }
     }
 
+    @Override
+    public void tick(Floor floor) {
+        super.tick(floor);
+        switch (direction) {
+            case Up -> this.setImageID(Main.PLAYER_UP_SRC);
+            case Down -> this.setImageID(Main.PLAYER_DOWN_SRC);
+            case Left -> this.setImageID(Main.PLAYER_LEFT_SRC);
+            case Right -> this.setImageID(Main.PLAYER_RIGHT_SRC);
+        }
+    }
 }
