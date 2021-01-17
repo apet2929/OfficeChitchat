@@ -10,7 +10,7 @@ import java.io.Serializable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Objects;
+import java.util.List;
 
 import static sample.Main.*;
 
@@ -28,12 +28,16 @@ public class Floor extends Group implements Serializable {
     private final ImageView[][] floor = new ImageView[width][height];
     public ImageView[][] propImageViews = new ImageView[width][height];
     public int fillTile;
-    public int personCnt = 0;
     private ArrayList<Prop> toRemove;
     private TranslateTransition transition;
     private ArrayList<BufferedAction> bufferedActions;
 
+    public ArrayList<Prop> path;
+
+    public boolean startUp;
+
     public Floor(int lvl){
+        startUp = true;
         this.lvl = lvl;
         fillTile = FLOOR_SRC;
         this.transition = new TranslateTransition();
@@ -52,6 +56,7 @@ public class Floor extends Group implements Serializable {
                 propImageViews[i][j].setLayoutY(j*Main.scale);
                 propImageViews[i][j].setTranslateZ(2);
 
+                addProp(new Prop(i,j));
             }
 
             getChildren().addAll(floor[i]);
@@ -59,6 +64,7 @@ public class Floor extends Group implements Serializable {
         }
         toRemove = new ArrayList<>();
         bufferedActions = new ArrayList<>();
+        startUp = false;
     }
 
     public void setTransitionDirection(int x, int y){
@@ -72,23 +78,12 @@ public class Floor extends Group implements Serializable {
         update();
     }
 
+    public void addEmptyProp(int x, int y){
+        props[x][y] = new Prop(x,y);
+    }
 
     public void removeProp(Prop prop){
         toRemove.add(prop);
-    }
-
-    //Important note: This function is not required to be 2 props next to each other, they can be diagonal, across the map, whatever.
-    public void setPropSwitch(Prop prop1, Prop prop2){
-        System.out.println("Switching " + prop1 + " and " + prop2);
-        int prop1X = prop1.getPosX();
-        int prop1Y = prop1.getPosY();
-        int prop2X = prop2.getPosX();
-        int prop2Y = prop2.getPosY();
-        prop1.setXY(prop2X, prop2Y);
-        prop2.setXY(prop1X, prop1Y);
-        props[prop2X][prop2Y] = prop1;
-        props[prop1X][prop1Y] = prop2;
-        update();
     }
 
     public void playAnimation(TranslateTransition transition, int x, int y){
@@ -99,7 +94,7 @@ public class Floor extends Group implements Serializable {
             props[x][y].animating = true;
             transition.play();
         } else {
-            System.out.println("The ImageView the animation is applied to is null");
+            System.out.println("The ImageView the animation is applied to at x: " + x + " y: " + y + " is null");
         }
 
     }
@@ -113,6 +108,7 @@ public class Floor extends Group implements Serializable {
         propImageViews[x][y].setTranslateZ(2);
         getChildren().add(propImageViews[x][y]);
     }
+
     public void clear(){
         props = new Prop[WIDTH/scale][HEIGHT/scale];
         propImageViews = new ImageView[WIDTH/scale][HEIGHT/scale];
@@ -131,16 +127,12 @@ public class Floor extends Group implements Serializable {
                 propImageViews[i][j].setTranslateZ(2);
                 propImageViews[i][j].setFitHeight(scale);
                 propImageViews[i][j].setFitWidth(scale);
+
+                addEmptyProp(i,j);
             }
             getChildren().addAll(floor[i]);
             getChildren().addAll(propImageViews[i]);
         }
-    }
-
-    public void setPropXYNoSwitch(Prop prop, int x2, int y2){
-        props[x2][y2] = prop;
-        prop.setXY(x2,y2);
-        update();
     }
 
     public void tileFloor(){
@@ -150,29 +142,30 @@ public class Floor extends Group implements Serializable {
             }
         }
     }
+
     public void moveUp(int x, int y, boolean override){
         if(props[x][y] != null){
             if(debug) System.out.println("Moving " + props[x][y].getID() + " up at " + props[x][y].getPosX() + " "+ props[x][y].getPosY());
-            if(props[x][y].isPassable() || override) moveUp(props[x][y]);
+            if(props[x][y].isWalkable() || override) moveUp(props[x][y]);
         }
 
     }
     public void moveRight(int x, int y, boolean override){
         if(props[x][y] != null){
             if(debug) System.out.println("Moving " + props[x][y].getID() + " right at " + props[x][y].getPosX() + " "+ props[x][y].getPosY());
-            if(props[x][y].isPassable() || override) moveRight(props[x][y]);
+            if(props[x][y].isWalkable() || override) moveRight(props[x][y]);
         }
     }
     public void moveLeft(int x, int y, boolean override){
         if(props[x][y] != null){
             if(debug) System.out.println("Moving " + props[x][y].getID() + " left at " + props[x][y].getPosX() + " "+ props[x][y].getPosY());
-            if(props[x][y].isPassable() || override) moveLeft(props[x][y]);
+            if(props[x][y].isWalkable() || override) moveLeft(props[x][y]);
         }
     }
     public void moveDown(int x, int y, boolean override){
         if(props[x][y] != null){
             if(debug) System.out.println("Moving " + props[x][y].getID() + " down at " + props[x][y].getPosX() + " "+ props[x][y].getPosY());
-            if(props[x][y].isPassable() || override) moveDown(props[x][y]);
+            if(props[x][y].isWalkable() || override) moveDown(props[x][y]);
         }
     }
 
@@ -180,7 +173,6 @@ public class Floor extends Group implements Serializable {
         if(prop.getPosY() != 0 && !prop.animating){ //here
             TranslateTransition transition = getUpTransition(); //here
             if(props[prop.getPosX()][prop.getPosY()-1] == null){ //here
-
                 transition.setOnFinished(e -> {
                     ImageView imageView = propImageViews[prop.getPosX()][prop.getPosY()];
                     imageView.setLayoutY(imageView.getLayoutY()+scale); //here
@@ -189,24 +181,14 @@ public class Floor extends Group implements Serializable {
                     props[prop.getPosX()][prop.getPosY()] = null;
                     prop.setPosY(prop.getPosY()-1); //here
                     prop.animating = false;
-                    update();
+                    tick();
                     resolveBufferedActions();
                 });
                 playAnimation(transition, prop.getPosX(), prop.getPosY());
             } else { //If the space im moving to has a prop in it
                 Prop moveTo = props[prop.getPosX()][prop.getPosY()-1]; //here
-                if(moveTo.isPassable()){ //If it is passable
+                if(moveTo.isWalkable()){ //If it is walkable
                     switchPlaces(prop, moveTo);
-
-//                    transition.setOnFinished(e -> {
-//                        ImageView imageView = propImageViews[prop.getPosX()][prop.getPosY()];
-//                        imageView.setLayoutY(imageView.getLayoutY()+scale); //here
-//                        prop.setPosY(prop.getPosY()-1); //here
-//                        prop.animating = false;
-//                        resolveBufferedActions();
-//                    });
-//                    playAnimation(transition, prop.getPosX(), prop.getPosY());
-//                    moveDown(moveTo); //here
                 } else { //If it is not passable
                     Main.print("You bumped into a " + props[prop.getPosX()][prop.getPosY()-1].getID()); //here
                 }
@@ -230,27 +212,18 @@ public class Floor extends Group implements Serializable {
                     imageView.setLayoutY(imageView.getLayoutY()-scale); //here
                     //Actual engine movement
                     props[prop.getPosX()][prop.getPosY()+1] = prop; //here
-                    props[prop.getPosX()][prop.getPosY()] = null;
+                    props[prop.getPosX()][prop.getPosY()] = new Prop(prop.getPosX(), prop.getPosY());
                     prop.setPosY(prop.getPosY()+1); //here
                     prop.animating = false;
-                    update();
+                    tick();
                     resolveBufferedActions();
                 });
                 playAnimation(transition, prop.getPosX(), prop.getPosY());
             } else { //If the space im moving to has a prop in it
 
                 Prop moveTo = props[prop.getPosX()][prop.getPosY()+1]; //here
-                if(moveTo.isPassable()){ //If it is passable
+                if(moveTo.isWalkable()){ //If it is passable
                     switchPlaces(prop, moveTo);
-//                    transition.setOnFinished(e -> {
-//                        ImageView imageView = propImageViews[prop.getPosX()][prop.getPosY()];
-//                        imageView.setLayoutY(imageView.getLayoutY()-scale); //here
-//                        prop.setPosY(prop.getPosY()+1); //here
-//                        prop.animating = false;
-//                        resolveBufferedActions();
-//                    });
-//                    playAnimation(transition, prop.getPosX(), prop.getPosY());
-//                    moveUp(moveTo); //here
                 } else { //If it is not passable
                     Main.print("You bumped into a " + props[prop.getPosX()][prop.getPosY()+1].getID()); //here
                 }
@@ -268,32 +241,23 @@ public class Floor extends Group implements Serializable {
     public Prop moveLeft(Prop prop){
         if(prop.getPosX() != 0 && !prop.animating){ //here
             TranslateTransition transition = getLeftTransition(); //here
-            if(props[prop.getPosX()-1][prop.getPosY()] == null){ //here
+            if(props[prop.getPosX()-1][prop.getPosY()].getID() != ID.Empty){ //here
                 transition.setOnFinished(e -> {
                     ImageView imageView = propImageViews[prop.getPosX()][prop.getPosY()];
                     imageView.setLayoutX(imageView.getLayoutX()+scale); //here
                     //Actual engine movement
                     props[prop.getPosX()-1][prop.getPosY()] = prop; //here
-                    props[prop.getPosX()][prop.getPosY()] = null;
+                    props[prop.getPosX()][prop.getPosY()] = new Prop(prop.getPosX(), prop.getPosY());
                     prop.setPosX(prop.getPosX()-1); //here
                     prop.animating = false;
-                    update();
+                    tick();
                     resolveBufferedActions();
                 });
                 playAnimation(transition, prop.getPosX(), prop.getPosY());
             } else { //If the space im moving to has a prop in it
                 Prop moveTo = props[prop.getPosX()-1][prop.getPosY()];
-                if(moveTo.isPassable()){ //If it is passable
+                if(moveTo.isWalkable()){ //If it is passable
                     switchPlaces(prop, moveTo);
-//                    transition.setOnFinished(e -> {
-//                        ImageView imageView = propImageViews[prop.getPosX()][prop.getPosY()];
-//                        imageView.setLayoutX(imageView.getLayoutX()-scale);
-//                        prop.setPosX(prop.getPosX()-1);
-//                        prop.animating = false;
-//                        resolveBufferedActions();
-//                    });
-//                    playAnimation(transition, prop.getPosX(), prop.getPosY());
-//                    moveRight(moveTo);
                 } else { //If it is not passable
                     Main.print("You bumped into a " + props[prop.getPosX()-1][prop.getPosY()].getID());
                 }
@@ -319,13 +283,13 @@ public class Floor extends Group implements Serializable {
                     props[prop.getPosX()][prop.getPosY()] = null;
                     prop.setPosX(prop.getPosX()+1);
                     prop.animating = false;
-                    update();
+                    tick();
                     resolveBufferedActions();
                 });
                 playAnimation(transition, prop.getPosX(), prop.getPosY());
             } else { //If the space im moving to has a prop in it
                 Prop moveTo = props[prop.getPosX()+1][prop.getPosY()];
-                if(moveTo.isPassable()){ //If it is passable
+                if(moveTo.isWalkable()){ //If it is passable
                     switchPlaces(prop, moveTo);
 //                    transition.setOnFinished(e -> {
 //                        ImageView imageView = propImageViews[prop.getPosX()][prop.getPosY()];
@@ -422,6 +386,27 @@ public class Floor extends Group implements Serializable {
         propImageViews[x][y].setImage(new Image(Main.genImages(imageID)));
     }
 
+    public List<Prop> getNeighbors(Prop prop){
+        List<Prop> neighbors = new ArrayList<>();
+
+        for (int x = -1; x <= 1; x++) {
+            for (int y = -1; y <= 1; y++) {
+                if (x == 0 && y == 0)
+                    continue;
+
+                int checkX = prop.getPosX() + x;
+                int checkY = prop.getPosY() + y;
+
+                if (checkX >= 0 && checkX < width && checkY >= 0 && checkY < height) {
+                    neighbors.add(props[checkX][checkY]);
+                }
+            }
+        }
+
+        return neighbors;
+    }
+
+
     public void switchPlaces(Prop prop, Prop moveTo){
         int propX = prop.getPosX();
         int propY = prop.getPosY();
@@ -432,7 +417,7 @@ public class Floor extends Group implements Serializable {
         props[moveToX][moveToY] = prop;
         prop.setXY(moveToX,moveToY);
         moveTo.setXY(propX, propY);
-
+        update();
     }
     public int getWidth() {
         return width;
@@ -446,30 +431,33 @@ public class Floor extends Group implements Serializable {
     public void tick(){ //Called every time player moves or interacts with anything
         //BufferedActions get resolved first
         resolveBufferedActions();
-
         for(Prop[] propArray : props){
             for(Prop prop: propArray){
                 if(prop != null) prop.tick(this);
             }
         }
+        update();
     }
 
     public void update(){ //May separate this into tick and render methods.
         if(debug) System.out.println("Updating");
-        for(Prop prop: toRemove){
-            System.out.println("Removed " + prop);
-            props[prop.getPosX()][prop.getPosY()] = null;
-        }
-        toRemove.clear();
+        if(!startUp) {
+            for (Prop prop : toRemove) {
+                System.out.println("Removed " + prop);
+                addProp(new Prop(prop.getPosX(), prop.getPosY()));
 
-        for(int i = 0; i < width; i++) {
-            for (int j = 0; j < height; j++) {
-                Prop prop = props[i][j];
-                if (prop != null) {
-                    propImageViews[i][j].setImage(new Image(genImages(prop.getImageID())));
-                    if(debug) System.out.print("at Array x: " + i + "y: " + j + prop);
-                } else {
-                    propImageViews[i][j].setImage(null);
+            }
+            toRemove.clear();
+
+            for (int i = 0; i < width; i++) {
+                for (int j = 0; j < height; j++) {
+                    Prop prop = props[i][j];
+                    if (prop != null) {
+                        propImageViews[i][j].setImage(new Image(genImages(prop.getImageID())));
+                        if (debug) System.out.print("at Array x: " + i + "y: " + j + prop);
+                    } else {
+                        propImageViews[i][j].setImage(null);
+                    }
                 }
             }
         }

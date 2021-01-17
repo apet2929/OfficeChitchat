@@ -1,20 +1,14 @@
 package sample;
 
 
-import javafx.scene.image.Image;
-
 import java.util.Locale;
 
-import static sample.Floor.UP_DIRECTION;
-
 public class Player extends BasicPerson {
-    public enum Status {
-        Default,
-        Looking
-    };
 
     private Status status;
     public GameStateManager gameStateManager;
+    public int health;
+
     public Status getStatus() {
         return status;
     }
@@ -30,6 +24,12 @@ public class Player extends BasicPerson {
         this.status = status;
         this.gameStateManager = gameStateManager;
         this.direction = Direction.Up;
+        this.health = 10;
+    }
+
+    public void spotted(){
+        health -= 1;
+        System.out.println("Player spotted, player health is now " + health);
     }
 
     public void moveDown(){
@@ -73,7 +73,7 @@ public class Player extends BasicPerson {
     }
 
     private void handleCollision(Prop prop){
-        if(!prop.isPassable()) Main.print("You bumped into a " + prop.getID().toString().toLowerCase(Locale.ROOT));
+        if(!prop.isWalkable()) Main.print("You bumped into a " + prop.getID().toString().toLowerCase(Locale.ROOT));
         if(prop.getID().equals(ID.Spike)){
             die();
         } else if(prop.getID().equals(ID.FloorUp)){
@@ -85,7 +85,6 @@ public class Player extends BasicPerson {
 
     @Override
     public void tick(Floor floor) {
-        super.tick(floor);
         switch (direction) {
             case Up -> this.setImageID(Main.PLAYER_UP_SRC);
             case Down -> this.setImageID(Main.PLAYER_DOWN_SRC);

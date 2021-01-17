@@ -2,9 +2,13 @@ package sample;
 
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
+import javafx.scene.CacheHint;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.TextArea;
+import javafx.scene.effect.*;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -59,6 +63,9 @@ public class Main extends Application {
     private LevelBuilder levelBuilder;
     private File saveFile;
 
+    //Pathfinding
+    Pathfinding pathfinding;
+
     @Override
     public void start(Stage primaryStage) throws Exception{
         //Creating groups and scenes, setup
@@ -91,6 +98,9 @@ public class Main extends Application {
         gameRoot.getChildren().add(currentFloor);
         gameRoot.getChildren().add(output);
 
+        //Pathfinding
+        pathfinding = new Pathfinding(currentFloor);
+
         //Handling input
         menu.setOnKeyPressed(this::handleInput);
         menu.setOnMouseClicked(this::handleInput);
@@ -113,6 +123,45 @@ public class Main extends Application {
         primaryStage.show();
     }
 
+//    @Override
+//    public void start(Stage stage) throws Exception {
+//        Image image = new Image(
+//                "http://icons.iconarchive.com/icons/designbolts/smurfs-movie/128/smurfette-icon.png"
+//        );
+//
+//        ImageView imageView = new ImageView(image);
+//        imageView.setClip(new ImageView(image));
+//
+//        ColorAdjust monochrome = new ColorAdjust();
+//        monochrome.setSaturation(-1.0);
+//
+//        Blend blush = new Blend(
+//                BlendMode.MULTIPLY,
+//                monochrome,
+//                new ColorInput(
+//                        0,
+//                        0,
+//                        imageView.getImage().getWidth(),
+//                        imageView.getImage().getHeight(),
+//                        Color.RED
+//                )
+//        );
+//
+//        imageView.effectProperty().bind(
+//                Bindings
+//                        .when(imageView.hoverProperty())
+//                        .then((Effect) blush)
+//                        .otherwise((Effect) null)
+//        );
+//
+//        imageView.setCache(true);
+//        imageView.setCacheHint(CacheHint.SPEED);
+//
+//        stage.setScene(new Scene(new Group(imageView), Color.AQUA));
+//        stage.show();
+//    }
+
+
     public static void preLoadFloor(int lvl){
         Floor flr = loadFloor(lvl);
         if(flr != null) {
@@ -134,38 +183,38 @@ public class Main extends Application {
     }
 
     public void loadGame(File file){ //1st is player, 2nd is lvl, 3rd is number of props
-        try {
-            System.out.println("Loading " + file.getName());
-            FileInputStream fileStream = new FileInputStream(file);
-            ObjectInputStream objectStream = new ObjectInputStream(fileStream);
-
-            currentFloor.clear();
-
-            //Loading Player
-            player = (Player) objectStream.readObject();
-            player.floor = currentFloor;
-            player.gameStateManager = gameStateManager;
-            currentFloor.addProp(player);
-            currentFloor.lvl = (Integer)objectStream.readObject();
-
-            currentFloor.setImage(player.getPosX(), player.getPosY(), player.getImageID());
-
-            //Loading all other props
-            Integer numProps = (Integer) (objectStream.readObject());
-            System.out.println("Number of props to be loaded: " + numProps);
-            for (int i = 0; i < numProps; i++) {
-                Prop temp = (Prop) (objectStream.readObject()); //We need to do this because we cannot serialize floors. Maybe fix this later?
-                System.out.print(temp);
-                temp.setFloor(currentFloor);
-            }
-
-            objectStream.close();
-            fileStream.close();
-//            currentFloor = new Floor(0);
-        }
-        catch (IOException | ClassNotFoundException | ClassCastException exception) {
-            System.out.println("Failed to load state");
-            exception.printStackTrace();
+//        try {
+//            System.out.println("Loading " + file.getName());
+//            FileInputStream fileStream = new FileInputStream(file);
+//            ObjectInputStream objectStream = new ObjectInputStream(fileStream);
+//
+//            currentFloor.clear();
+//
+//            //Loading Player
+//            player = (Player) objectStream.readObject();
+//            player.floor = currentFloor;
+//            player.gameStateManager = gameStateManager;
+//            currentFloor.addProp(player);
+//            currentFloor.lvl = (Integer)objectStream.readObject();
+//
+//            currentFloor.setImage(player.getPosX(), player.getPosY(), player.getImageID());
+//
+//            //Loading all other props
+//            Integer numProps = (Integer) (objectStream.readObject());
+//            System.out.println("Number of props to be loaded: " + numProps);
+//            for (int i = 0; i < numProps; i++) {
+//                Prop temp = (Prop) (objectStream.readObject()); //We need to do this because we cannot serialize floors. Maybe fix this later?
+//                System.out.print(temp);
+//                temp.setFloor(currentFloor);
+//            }
+//
+//            objectStream.close();
+//            fileStream.close();
+////            currentFloor = new Floor(0);
+//        }
+//        catch (IOException | ClassNotFoundException | ClassCastException exception) {
+//            System.out.println("Failed to load state");
+//            exception.printStackTrace();
             player = new Player(1, 12, this.currentFloor, Player.Status.Default, gameStateManager);
             currentFloor.addProp(player);
             currentFloor.addProp(new BasicPerson( 10,10,scale,scale, currentFloor));
@@ -173,7 +222,7 @@ public class Main extends Application {
             currentFloor.addProp(wall);
             Spike spike = new Spike(2,2, currentFloor);
             currentFloor.update();
-        }
+//        }
     }
 
     public void loadGame(int lvl){
@@ -202,7 +251,7 @@ public class Main extends Application {
             Integer numProps = -1;
             for(Prop[] props : currentFloor.props) {
                 for (Prop prop : props) {
-                    if (prop != null) {
+                    if (prop.getID() != ID.Empty) {
                         numProps++;
                     }
                 }
@@ -212,7 +261,7 @@ public class Main extends Application {
 
             for(Prop[] props : currentFloor.props) {
                 for (Prop prop : props) {
-                    if (prop != null && prop.getID() != ID.Player) {
+                    if (prop.getID() != ID.Empty && prop.getID() != ID.Player) {
                         prop.floor = null;
                         oos.writeObject(prop);
                     }
@@ -621,8 +670,9 @@ public class Main extends Application {
                 if (player.getStatus() == Player.Status.Default && !player.animating) loadGame(saveFile);
             }
             case T -> {
-                System.out.println("Testing");
-                System.out.println(currentFloor.lvl);
+                BasicPerson test = new BasicPerson(5,10, BasicPerson.Direction.Down,currentFloor);
+                pathfinding.startFindPath(test.getPosX(), test.getPosY(), player.getPosX(), player.getPosY());
+                System.out.println(currentFloor.path.toString());
             }
 
             default -> System.out.println("default");
