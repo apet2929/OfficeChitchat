@@ -16,6 +16,13 @@ public class InputHandler {
                         String code = keyEvent.getCode().toString();
                         if(!input.contains(code))
                             input.add(code);
+                        if(code.equals("PERIOD")){
+                            TileRenderer.scale(1.1, 1.1);
+                        }
+                        if(code.equals("COMMA")){
+                            TileRenderer.scale(0.9, 0.9);
+
+                        }
                     }
                 }
         );

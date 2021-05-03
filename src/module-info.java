@@ -4,6 +4,7 @@ module OfficeChitchat {
 
     requires kotlin.stdlib;
     requires javafx.media;
+    requires java.desktop;
 
     opens sample;
 }
