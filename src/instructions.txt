@@ -1,5 +1,0 @@
-When making a new Prop checklist:
-1) Make a prop class
-2) Make and ID for it
-3) Make a case for it in just the load game
-    3a) If it has something unserializable attached to the class, make an extra if block in the save function

@@ -1,0 +1,27 @@
+TODO
+1) Tiles
+2) Tile map
+3) State handling
+4) Entities
+5) Player
+6) Input
+7) Core game loop
+
+Map is given in form of int array, passed to TileRenderer, and then rendered.
+
+Moving/Turning blades
+Air condition units/Big fans push you off
+
+DONE
+Tiles, tile map, input, sprites, state handling kinda
+
+STATES:
+State is an abstract class that provides this template:
+    1) Each state will have 4 methods: an Update, a Render, an OnEnter, and an OnExit method.
+    2) Each state will contain a Group.
+        a) In the OnEnter method, the scene's parent will be set to the state group.
+The StateMachine is a high-level object that will handle the adding and switching between of these states.
+    1) It will have only 1 active state at a time
+    2) It will contain a list of all possible states
+    3) It will call the active state's render and update methods
+When adding a new state to the StateMachine, you must provide a state and a string to identify the state by, which will be used when changing states.
